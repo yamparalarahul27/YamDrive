@@ -1,0 +1,265 @@
+<!doctype html>
+<html lang="en">
+<head>
+  <meta charset="utf-8" />
+  <meta name="viewport" content="width=device-width, initial-scale=1" />
+  <title>Mobile Design Playground</title>
+  <style>
+    :root {
+      --bg: #f5f5f7;
+      --panel: #ffffff;
+      --ink: #1d1d1f;
+      --muted: #6e6e73;
+      --line: #e5e5ea;
+      --accent: #0a84ff;
+      --stage: #ececed;
+      --mono: ui-monospace, SFMono-Regular, "SF Mono", Menlo, monospace;
+      --sans: -apple-system, BlinkMacSystemFont, "Segoe UI", Roboto, sans-serif;
+    }
+    @media (prefers-color-scheme: dark) {
+      :root {
+        --bg: #1c1c1e; --panel: #2c2c2e; --ink: #f5f5f7; --muted: #98989d;
+        --line: #3a3a3c; --stage: #161617;
+      }
+    }
+    * { box-sizing: border-box; }
+    html, body { margin: 0; height: 100%; }
+    body {
+      font-family: var(--sans); color: var(--ink); background: var(--bg);
+      display: grid; grid-template-columns: minmax(320px, 420px) 1fr; height: 100vh;
+    }
+    @media (max-width: 820px) { body { grid-template-columns: 1fr; grid-template-rows: auto 1fr; } }
+
+    /* --- Editor pane --- */
+    .editor { display: flex; flex-direction: column; border-right: 1px solid var(--line); min-height: 0; background: var(--panel); }
+    .editor header { padding: 16px 18px 10px; border-bottom: 1px solid var(--line); }
+    .editor h1 { font-size: 16px; margin: 0 0 3px; letter-spacing: -0.01em; }
+    .editor p { font-size: 12px; color: var(--muted); margin: 0; line-height: 1.45; }
+    .toolbar { display: flex; gap: 8px; padding: 10px 18px; flex-wrap: wrap; align-items: center; }
+    button {
+      font: inherit; font-size: 12px; font-weight: 550; padding: 6px 12px; border-radius: 8px;
+      border: 1px solid var(--line); background: var(--bg); color: var(--ink); cursor: pointer;
+    }
+    button.primary { background: var(--accent); border-color: var(--accent); color: #fff; }
+    button:active { transform: translateY(1px); }
+    textarea {
+      flex: 1; min-height: 0; width: 100%; resize: none; border: none; outline: none;
+      padding: 14px 18px; font-family: var(--mono); font-size: 12px; line-height: 1.5;
+      background: transparent; color: var(--ink); tab-size: 2;
+    }
+    .status { padding: 8px 18px; font-family: var(--mono); font-size: 11px; border-top: 1px solid var(--line); min-height: 34px; }
+    .status.ok { color: #1a7f37; }
+    .status.err { color: #d1242f; white-space: pre-wrap; }
+    @media (prefers-color-scheme: dark) { .status.ok { color: #3fb950; } .status.err { color: #f85149; } }
+
+    /* --- Stage --- */
+    .stage { background: var(--stage); overflow: auto; padding: 40px; display: flex; gap: 56px; justify-content: center; align-items: flex-start; flex-wrap: wrap; }
+    .device { display: flex; flex-direction: column; align-items: center; gap: 14px; }
+    .device .label { font-size: 12px; color: var(--muted); font-weight: 550; }
+
+    /* iPhone bezel */
+    .iphone { padding: 12px; background: #1a1a1c; border-radius: 54px; box-shadow: 0 30px 60px rgba(0,0,0,.28), inset 0 0 0 2px #3a3a3c; }
+    .iphone .screen { border-radius: 42px; overflow: hidden; position: relative; background: #fff; }
+    .iphone .island { position: absolute; top: 10px; left: 50%; transform: translateX(-50%); width: 32%; height: 26px; background: #0b0b0c; border-radius: 20px; z-index: 20; }
+
+    /* Android bezel */
+    .android { padding: 10px; background: #202124; border-radius: 34px; box-shadow: 0 30px 60px rgba(0,0,0,.28), inset 0 0 0 2px #3c4043; }
+    .android .screen { border-radius: 26px; overflow: hidden; position: relative; background: #fff; }
+    .android .punch { position: absolute; top: 12px; left: 50%; transform: translateX(-50%); width: 11px; height: 11px; background: #0b0b0c; border-radius: 50%; z-index: 20; }
+
+    .screen .canvas { transform-origin: top left; }
+    .node-text { white-space: pre-wrap; overflow: hidden; }
+  </style>
+</head>
+<body>
+  <section class="editor">
+    <header>
+      <h1>Mobile Design Playground</h1>
+      <p>Paste a <code>layout.json</code> spec (same schema the capture tool and Figma plugin use). It renders live inside iPhone and Android mockups.</p>
+    </header>
+    <div class="toolbar">
+      <button class="primary" id="render">Render</button>
+      <button id="loadExample">Load example</button>
+      <button id="format">Format JSON</button>
+    </div>
+    <textarea id="input" spellcheck="false" autocomplete="off"></textarea>
+    <div class="status" id="status"></div>
+  </section>
+
+  <section class="stage" id="stage">
+    <div class="device">
+      <div class="label">iPhone · iOS</div>
+      <div class="iphone"><div class="island"></div><div class="screen" id="iosScreen"></div></div>
+    </div>
+    <div class="device">
+      <div class="label">Pixel · Android</div>
+      <div class="android"><div class="punch"></div><div class="screen" id="androidScreen"></div></div>
+    </div>
+  </section>
+
+  <script>
+    // Target on-screen width (CSS px) each mockup renders at; the spec's point
+    // dimensions are scaled to fit this so different device sizes look right.
+    const IOS_W = 300;
+    const ANDROID_W = 300;
+
+    const EXAMPLE = {
+      schemaVersion: 1,
+      source: "manual",
+      name: "Sign in (example)",
+      device: { width: 393, height: 852 },
+      root: {
+        type: "FRAME", name: "Sign in", x: 0, y: 0, width: 393, height: 852,
+        fills: [{ type: "SOLID", color: "#FFFFFF" }], cornerRadius: 0,
+        layout: { mode: "VERTICAL", paddingTop: 96, paddingRight: 24, paddingBottom: 24, paddingLeft: 24, itemSpacing: 16, primaryAxisAlignItems: "MIN", counterAxisAlignItems: "MIN" },
+        children: [
+          { type: "TEXT", name: "Heading", x: 24, y: 96, width: 345, height: 40, characters: "Welcome back", fontSize: 32, fontWeight: 700, color: "#1D1D1F", textAlign: "LEFT" },
+          { type: "TEXT", name: "Subheading", x: 24, y: 152, width: 345, height: 22, characters: "Sign in to continue", fontSize: 16, fontWeight: 400, color: "#6E6E73", textAlign: "LEFT" },
+          { type: "FRAME", name: "Email field", x: 24, y: 198, width: 345, height: 52, fills: [{ type: "SOLID", color: "#F2F2F7" }], cornerRadius: 12,
+            layout: { mode: "HORIZONTAL", paddingTop: 15, paddingRight: 16, paddingBottom: 15, paddingLeft: 16, itemSpacing: 8, primaryAxisAlignItems: "MIN", counterAxisAlignItems: "CENTER" },
+            children: [ { type: "TEXT", name: "Email placeholder", x: 16, y: 15, width: 200, height: 22, characters: "Email address", fontSize: 16, fontWeight: 400, color: "#8E8E93", textAlign: "LEFT" } ] },
+          { type: "FRAME", name: "Password field", x: 24, y: 266, width: 345, height: 52, fills: [{ type: "SOLID", color: "#F2F2F7" }], cornerRadius: 12,
+            layout: { mode: "HORIZONTAL", paddingTop: 15, paddingRight: 16, paddingBottom: 15, paddingLeft: 16, itemSpacing: 8, primaryAxisAlignItems: "MIN", counterAxisAlignItems: "CENTER" },
+            children: [ { type: "TEXT", name: "Password placeholder", x: 16, y: 15, width: 200, height: 22, characters: "Password", fontSize: 16, fontWeight: 400, color: "#8E8E93", textAlign: "LEFT" } ] },
+          { type: "FRAME", name: "Sign in button", x: 24, y: 334, width: 345, height: 52, fills: [{ type: "SOLID", color: "#0A84FF" }], cornerRadius: 12,
+            layout: { mode: "HORIZONTAL", paddingTop: 15, paddingRight: 16, paddingBottom: 15, paddingLeft: 16, itemSpacing: 8, primaryAxisAlignItems: "CENTER", counterAxisAlignItems: "CENTER" },
+            children: [ { type: "TEXT", name: "Button label", x: 150, y: 15, width: 60, height: 22, characters: "Sign in", fontSize: 16, fontWeight: 600, color: "#FFFFFF", textAlign: "CENTER" } ] }
+        ]
+      }
+    };
+
+    const JUSTIFY = { MIN: "flex-start", CENTER: "center", MAX: "flex-end", SPACE_BETWEEN: "space-between" };
+    const ALIGN = { MIN: "flex-start", CENTER: "center", MAX: "flex-end" };
+    const TALIGN = { LEFT: "left", CENTER: "center", RIGHT: "right", JUSTIFIED: "justify" };
+
+    // --- Lightweight schema check (mirrors src/layout.js validateLayoutSpec) ---
+    function validate(spec) {
+      const errs = [];
+      if (!spec || typeof spec !== "object") return ["Spec must be an object."];
+      if (!spec.root || typeof spec.root !== "object") return ["Spec is missing a 'root' node."];
+      (function walk(n, path) {
+        if (!n || typeof n !== "object") { errs.push(path + ": node must be an object."); return; }
+        if (n.type !== "FRAME" && n.type !== "TEXT") errs.push(path + ': type must be "FRAME" or "TEXT".');
+        for (const k of ["x", "y", "width", "height"]) if (typeof n[k] !== "number") errs.push(path + ": " + k + " must be a number.");
+        if (n.type === "TEXT" && typeof n.characters !== "string") errs.push(path + ': TEXT needs "characters" string.');
+        if (n.type === "FRAME" && n.children) n.children.forEach((c, i) => walk(c, path + ".children[" + i + "]"));
+      })(spec.root, "root");
+      return errs;
+    }
+
+    function fillColor(node) {
+      const f = Array.isArray(node.fills) ? node.fills.find(x => x && x.type === "SOLID") : null;
+      return f ? f.color : "transparent";
+    }
+
+    // Build a DOM node for a spec node. `absolute` is true when the parent
+    // positions children absolutely (layout NONE / omitted).
+    function renderNode(node, absolute) {
+      const el = document.createElement("div");
+      const s = el.style;
+
+      if (absolute) {
+        s.position = "absolute";
+        s.left = node.x + "px"; s.top = node.y + "px";
+        s.width = node.width + "px"; s.height = node.height + "px";
+      } else {
+        // Inside an auto-layout stack: keep the authored box size.
+        s.width = node.width + "px";
+        s.flex = "0 0 auto";
+      }
+      if (typeof node.opacity === "number") s.opacity = String(node.opacity);
+
+      if (node.type === "TEXT") {
+        el.className = "node-text";
+        el.textContent = node.characters || "";
+        s.fontSize = (node.fontSize || 16) + "px";
+        s.fontWeight = String(node.fontWeight || 400);
+        s.color = node.color || "#1d1d1f";
+        s.textAlign = TALIGN[node.textAlign] || "left";
+        s.lineHeight = "1.25";
+        if (!absolute) s.height = node.height + "px";
+        return el;
+      }
+
+      // FRAME
+      s.background = fillColor(node);
+      if (node.cornerRadius) s.borderRadius = node.cornerRadius + "px";
+      if (node.stroke) s.border = (node.strokeWeight || 1) + "px solid " + node.stroke;
+      if (!absolute) s.height = node.height + "px";
+
+      const lay = node.layout || { mode: "NONE" };
+      const children = Array.isArray(node.children) ? node.children : [];
+
+      if (lay.mode === "VERTICAL" || lay.mode === "HORIZONTAL") {
+        s.display = "flex";
+        s.flexDirection = lay.mode === "VERTICAL" ? "column" : "row";
+        s.paddingTop = (lay.paddingTop || 0) + "px";
+        s.paddingRight = (lay.paddingRight || 0) + "px";
+        s.paddingBottom = (lay.paddingBottom || 0) + "px";
+        s.paddingLeft = (lay.paddingLeft || 0) + "px";
+        s.gap = (lay.itemSpacing || 0) + "px";
+        s.justifyContent = JUSTIFY[lay.primaryAxisAlignItems] || "flex-start";
+        s.alignItems = ALIGN[lay.counterAxisAlignItems] || "flex-start";
+        s.overflow = "hidden";
+        children.forEach(c => el.appendChild(renderNode(c, false)));
+      } else {
+        s.position = "relative";
+        s.overflow = "hidden";
+        children.forEach(c => el.appendChild(renderNode(c, true)));
+      }
+      return el;
+    }
+
+    function paint(screenEl, spec, targetW) {
+      const dev = spec.device || { width: spec.root.width, height: spec.root.height };
+      const scale = targetW / dev.width;
+      screenEl.style.width = Math.round(dev.width * scale) + "px";
+      screenEl.style.height = Math.round(dev.height * scale) + "px";
+      screenEl.innerHTML = "";
+
+      const canvas = document.createElement("div");
+      canvas.className = "canvas";
+      canvas.style.width = dev.width + "px";
+      canvas.style.height = dev.height + "px";
+      canvas.style.transform = "scale(" + scale + ")";
+
+      // Root frame fills the canvas.
+      const root = renderNode(spec.root, false);
+      root.style.width = dev.width + "px";
+      root.style.height = dev.height + "px";
+      canvas.appendChild(root);
+      screenEl.appendChild(canvas);
+    }
+
+    const input = document.getElementById("input");
+    const status = document.getElementById("status");
+
+    function setStatus(msg, kind) { status.textContent = msg; status.className = "status " + (kind || ""); }
+
+    function render() {
+      let spec;
+      try { spec = JSON.parse(input.value); }
+      catch (e) { setStatus("JSON parse error: " + e.message, "err"); return; }
+      const errs = validate(spec);
+      if (errs.length) { setStatus("Schema issues:\n• " + errs.slice(0, 8).join("\n• "), "err"); return; }
+      try {
+        paint(document.getElementById("iosScreen"), spec, IOS_W);
+        paint(document.getElementById("androidScreen"), spec, ANDROID_W);
+        setStatus("Rendered “" + (spec.name || "screen") + "” · " + spec.device.width + "×" + spec.device.height + "pt", "ok");
+      } catch (e) { setStatus("Render error: " + e.message, "err"); }
+    }
+
+    document.getElementById("render").addEventListener("click", render);
+    document.getElementById("loadExample").addEventListener("click", () => { input.value = JSON.stringify(EXAMPLE, null, 2); render(); });
+    document.getElementById("format").addEventListener("click", () => {
+      try { input.value = JSON.stringify(JSON.parse(input.value), null, 2); setStatus("Formatted.", "ok"); }
+      catch (e) { setStatus("Cannot format: " + e.message, "err"); }
+    });
+    // Re-render shortly after typing stops.
+    let t; input.addEventListener("input", () => { clearTimeout(t); t = setTimeout(render, 500); });
+
+    input.value = JSON.stringify(EXAMPLE, null, 2);
+    render();
+  </script>
+</body>
+</html>
