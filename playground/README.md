@@ -17,6 +17,15 @@ anything you build here can go straight into Figma via the plugin.
 - **layout.json** — edit the generated (or pasted) spec directly for fine
   control. The two tabs stay in sync.
 
+## Multiple screens
+
+Start a new screen with a top-level `screen Name` line; everything indented
+under it belongs to that screen. When an outline defines more than one screen, a
+picker bar appears above the mockups to switch between them. The default example
+is an end-to-end crypto-exchange flow (Home/Lite, Markets, Coin, spot Buy,
+Futures/Pro, Earn/Coin Sets, Bonus, Wallet, Deposit) with INR, 1% TDS, KYC and
+UPI context, and a Lite→Pro progressive-disclosure toggle.
+
 ## Two ways to author
 
 1. **Fully-styled spec** — set `fontSize`, `color`, `fills`, `cornerRadius`,
@@ -75,9 +84,22 @@ a real financial product (e.g. a crypto exchange):
 | `chips All \| Gainers \| Losers` | row of filter chips |
 | `asset BTC \| Bitcoin \| $64,230 \| +2.4%` | list row: avatar, name/symbol, price, colored change |
 | `tabbar Home \| Markets \| Trade \| Wallet` | bottom nav with divider (first selected) |
+| `header ‹ \| Title \| ☆` | detail nav bar: back, centered title, action |
+| `chart +2.4%` | price sparkline; sign sets the line color |
+| `orderform BTC \| INR` | Buy/Sell tabs + amount + slider + total + button |
+| `slider 25` | progress/percentage slider at 25% |
+| `switch UPI \| on` | labeled row with an on/off toggle |
+| `stats High:64,900 \| Low:61,200 \| Vol:1.2B` | row of stat tiles (label + value) |
+| `stat Available \| ₹80,000` | single key/value row (spaced apart) |
+| `banner 1% TDS on sells \| KYC verified` | tinted info banner (`\|` joins with ·) |
+| `tag 10x` | small pill badge |
 | `avatar BTC` | circular initials badge |
 | `divider` | hairline rule |
 | `spacer 24` | fixed vertical gap of 24 |
+
+The `chart` sparkline is a lightweight placeholder — deterministic, no live
+data. Swap it for a real series later; it's isolated in the renderer's
+`drawChart`.
 
 **Change coloring:** a value starting with `+` renders in the platform's
 positive color (green), `-` in the negative color (red), anything else neutral.

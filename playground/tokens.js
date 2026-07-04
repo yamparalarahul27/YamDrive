@@ -41,7 +41,9 @@
       neutral:    { fontSize: 15, fontWeight: 600, color: "onBackgroundSecondary" },
       avatarText: { fontSize: 15, fontWeight: 700, color: "onPrimary" },
       actionGlyph:{ fontSize: 22, fontWeight: 600, color: "onPrimary" },
-      tabLabelActive: { fontSize: 11, fontWeight: 600, color: "primary" }
+      tabLabelActive: { fontSize: 11, fontWeight: 600, color: "primary" },
+      navTitle:   { fontSize: 17, fontWeight: 600, color: "onBackground" },
+      tagText:    { fontSize: 12, fontWeight: 600, color: "primary" }
     },
     color: {
       onBackground: "#1D1D1F",
@@ -53,7 +55,8 @@
       outline: "#D1D1D6",
       positive: "#34C759",
       negative: "#FF3B30",
-      segmentSel: "#FFFFFF"
+      segmentSel: "#FFFFFF",
+      infoBg: "#EAF3FF"
     },
     // Component metrics (points). 8pt spacing grid; 44pt minimum tap target.
     metrics: {
@@ -73,7 +76,14 @@
       actionIcon:{ size: 56, radius: 28 },
       iconBtn:  { size: 36, radius: 18 },
       tabDot:   { size: 22, radius: 11 },
-      divider:  { thickness: 1 }
+      divider:  { thickness: 1 },
+      header:   { height: 52 },
+      chart:    { height: 168 },
+      slider:   { height: 30, track: 4, knob: 22 },
+      switch:   { width: 46, height: 28, knob: 24 },
+      tag:      { height: 24, radius: 6 },
+      banner:   { radius: 12 },
+      smallbtn: { height: 34, radius: 8 }
     }
   };
 
@@ -98,7 +108,9 @@
       neutral:    { fontSize: 14, fontWeight: 600, color: "onBackgroundSecondary" },
       avatarText: { fontSize: 14, fontWeight: 600, color: "onPrimary" },
       actionGlyph:{ fontSize: 22, fontWeight: 500, color: "onPrimary" },
-      tabLabelActive: { fontSize: 12, fontWeight: 600, color: "primary" }
+      tabLabelActive: { fontSize: 12, fontWeight: 600, color: "primary" },
+      navTitle:   { fontSize: 20, fontWeight: 500, color: "onBackground" },
+      tagText:    { fontSize: 12, fontWeight: 600, color: "primary" }
     },
     color: {
       onBackground: "#1C1B1F",
@@ -110,7 +122,8 @@
       outline: "#CAC4D0",
       positive: "#2E7D32",
       negative: "#B3261E",
-      segmentSel: "#E8DEF8"
+      segmentSel: "#E8DEF8",
+      infoBg: "#EADDFF"
     },
     // Material metrics (dp). 4/8dp grid; 48dp minimum touch target; full-radius buttons.
     metrics: {
@@ -130,7 +143,14 @@
       actionIcon:{ size: 56, radius: 16 },
       iconBtn:  { size: 40, radius: 20 },
       tabDot:   { size: 24, radius: 12 },
-      divider:  { thickness: 1 }
+      divider:  { thickness: 1 },
+      header:   { height: 56 },
+      chart:    { height: 168 },
+      slider:   { height: 30, track: 4, knob: 22 },
+      switch:   { width: 52, height: 32, knob: 26 },
+      tag:      { height: 24, radius: 8 },
+      banner:   { radius: 12 },
+      smallbtn: { height: 34, radius: 18 }
     }
   };
 
@@ -228,6 +248,45 @@
       case "divider":
         node.height = t.metrics.divider.thickness;
         setFill("outline");
+        break;
+      case "header":
+        node.height = t.metrics.header.height;
+        break;
+      case "ghost":
+        node.width = node.height = t.metrics.iconBtn.size;
+        break;
+      case "smallbtn":
+        node.height = t.metrics.smallbtn.height;
+        node.cornerRadius = t.metrics.smallbtn.radius;
+        setFill("primary");
+        break;
+      case "tag":
+        node.height = t.metrics.tag.height;
+        node.cornerRadius = t.metrics.tag.radius;
+        setFill("infoBg");
+        break;
+      case "banner":
+        node.cornerRadius = t.metrics.banner.radius;
+        setFill("infoBg");
+        break;
+      case "chart":
+        node.height = t.metrics.chart.height;
+        node.lineColor = node.up === false ? t.color.negative : t.color.positive;
+        break;
+      case "slider":
+        node.height = t.metrics.slider.height;
+        node.trackH = t.metrics.slider.track;
+        node.knobSize = t.metrics.slider.knob;
+        node.fillColor = t.color.primary;
+        node.trackColor = t.color.outline;
+        break;
+      case "switch":
+        node.width = t.metrics.switch.width;
+        node.height = t.metrics.switch.height;
+        node.knobSize = t.metrics.switch.knob;
+        node.onColor = t.color.primary;
+        node.offColor = t.color.outline;
+        node.knobColor = t.color.onPrimary;
         break;
       default:
         break;
