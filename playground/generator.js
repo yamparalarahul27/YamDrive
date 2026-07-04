@@ -73,7 +73,7 @@
     n.icon = name; n.iconSize = size || 20; n.colorRole = colorRole || "onBackground"; n.fallback = fallback == null ? "" : fallback;
     return n;
   }
-  function avatar(label) { return frame("avatar", "HORIZONTAL", { primaryAxisAlignItems: "CENTER", counterAxisAlignItems: "CENTER" }, [txt("avatarText", initials(label), "CENTER")]); }
+  function avatar(label, size) { const a = frame("avatar", "HORIZONTAL", { primaryAxisAlignItems: "CENTER", counterAxisAlignItems: "CENTER" }, [txt("avatarText", initials(label), "CENTER")]); if (size) a.avatarSize = size; return a; }
   function iconBtn(g) { return frame("iconBtn", "HORIZONTAL", { primaryAxisAlignItems: "CENTER", counterAxisAlignItems: "CENTER" }, [iconNode(g, 20, "onBackground", g)]); }
   function ghost() { return frame("ghost", "NONE", {}, []); }
   function smallBtn(label) { return frame("smallbtn", "HORIZONTAL", { paddingLeft: 16, paddingRight: 16, primaryAxisAlignItems: "CENTER", counterAxisAlignItems: "CENTER" }, [txt("buttonText", label || "", "CENTER")]); }
@@ -237,11 +237,13 @@
       case "tabs":
         return buildComposite("timeframe", content);
       case "tile": {
-        // ticker | price | change  — a small card for a carousel
-        const t = frame("tile", "VERTICAL", { paddingTop: 12, paddingBottom: 12, paddingLeft: 12, paddingRight: 12, itemSpacing: 6, counterAxisAlignItems: "MIN" }, [
-          avatar(f[0]), txt("caption", f[0] || ""), txt("value", f[1] || ""), txt(changeRole(f[2]), f[2] || "")
+        // ticker | price | change [| lg]  — a card for a carousel; `lg` = big
+        const big = /^(lg|big)$/i.test((f[3] || "").trim());
+        const pad = big ? 16 : 12;
+        const t = frame("tile", "VERTICAL", { paddingTop: pad, paddingBottom: pad, paddingLeft: pad, paddingRight: pad, itemSpacing: big ? 8 : 6, counterAxisAlignItems: "MIN" }, [
+          avatar(f[0], big ? 48 : undefined), txt("caption", f[0] || ""), txt(big ? "navTitle" : "value", f[1] || ""), txt(changeRole(f[2]), f[2] || "")
         ]);
-        t.fixedW = 132;
+        t.fixedW = big ? 168 : 132;
         return t;
       }
       case "dapp": {
@@ -397,6 +399,7 @@
     if (node.role === "divider") { node.height = 1; return node.height; }
     if (node.role === "tfmark") { node.width = 16; node.height = 3; return node.height; }
     if (node.role === "icon") { node.width = node.height = node.iconSize || 20; return node.height; }
+    if (node.role === "avatar" && node.avatarSize) { node.width = node.height = node.avatarSize; layoutChildren(node, x, node.avatarSize); return node.height; }
     const size = COMPONENT_SIZE[node.role];
     if (size != null) { node.width = size; layoutChildren(node, x, size); node.height = size; return node.height; }
     const content = layoutChildren(node, x, width);

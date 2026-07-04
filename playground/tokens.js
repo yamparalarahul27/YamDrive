@@ -285,8 +285,8 @@
         setFill("segmentSel");
         break;
       case "avatar":
-        node.width = node.height = t.metrics.avatar.size;
-        node.cornerRadius = t.metrics.avatar.radius;
+        node.width = node.height = node.avatarSize || t.metrics.avatar.size;
+        node.cornerRadius = node.avatarSize ? Math.round(node.avatarSize / 2) : t.metrics.avatar.radius;
         setFill("primary");
         break;
       case "actionIcon":
