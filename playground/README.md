@@ -107,6 +107,12 @@ a real financial product (e.g. a crypto exchange):
 | `posdetail $205.12 \| Long 2x \| +$2.01 (4%) \| $587.89 \| tp \| sl` | position manage card: size + pill, PnL, margin, take-profit, stop-loss |
 | `tile XY100 \| $29,871.01 \| +0.85%` | small card (logo, ticker, price, change) for a carousel |
 | `dapp Polymarket` | app-icon tile (rounded-square logo + label) |
+| `bignum $6,100 \| -2.12%` | big centered value + sub-caption |
+| `keypad` | numeric keypad (1-9, ., 0, ⌫) |
+
+**Bottom sheets:** add `sheet` after a screen name — `screen Leverage | sheet` —
+to render its content as a rounded card anchored to the bottom over a dimmed
+scrim (with a grabber handle). Everything else about the screen works the same.
 
 `carousel` is a **container** (nest `tile`/`dapp` lines under it), not a
 composite. It renders a section header (title + optional `new` badge + chevron)

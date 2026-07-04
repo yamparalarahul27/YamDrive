@@ -31,7 +31,8 @@
     appbar: 1, header: 1, balance: 1, actions: 1, segmented: 1, chips: 1, chip: 1, asset: 1,
     tabbar: 1, avatar: 1, divider: 1, spacer: 1, chart: 1, stats: 1, stat: 1, slider: 1,
     switch: 1, banner: 1, tag: 1, trader: 1, orderform: 1, iconbtn: 1, quote: 1, timeframe: 1,
-    account: 1, buttons: 1, tabs: 1, statbar: 1, position: 1, posdetail: 1, tile: 1, dapp: 1
+    account: 1, buttons: 1, tabs: 1, statbar: 1, position: 1, posdetail: 1, tile: 1, dapp: 1,
+    keypad: 1, bignum: 1
   };
 
   const TEXT_HEIGHT = {
@@ -43,7 +44,8 @@
   };
   const COMPONENT_H = {
     button: 52, field: 52, listItem: 44, chip: 34, segmented: 40, appbar: 56, header: 56,
-    tabbar: 72, iconBtn: 36, chart: 168, slider: 30, switch: 30, tag: 24, smallbtn: 34
+    tabbar: 72, iconBtn: 36, chart: 168, slider: 30, switch: 30, tag: 24, smallbtn: 34,
+    key: 52, grabber: 5
   };
   const COMPONENT_SIZE = { avatar: 40, actionIcon: 56, iconBtn: 36, tabDot: 22, tabDotActive: 22, ghost: 36, appicon: 56 };
 
@@ -236,6 +238,17 @@
       }
       case "tabs":
         return buildComposite("timeframe", content);
+      case "bignum": {
+        // big centered value + optional sub-caption (e.g. $6,100 / -2.12%)
+        return frame("group", "VERTICAL", { itemSpacing: 4, primaryAxisAlignItems: "CENTER", counterAxisAlignItems: "CENTER" }, [
+          txt("amount", f[0] || "", "CENTER"), txt("caption", f[1] || "", "CENTER")
+        ]);
+      }
+      case "keypad": {
+        const key = (label) => grow(frame("key", "HORIZONTAL", { primaryAxisAlignItems: "CENTER", counterAxisAlignItems: "CENTER" }, [txt("key", label, "CENTER")]));
+        const rowOf = (a, b, c) => frame("group", "HORIZONTAL", { itemSpacing: 8 }, [key(a), key(b), key(c)]);
+        return frame("group", "VERTICAL", { itemSpacing: 6, counterAxisAlignItems: "STRETCH" }, [rowOf("1", "2", "3"), rowOf("4", "5", "6"), rowOf("7", "8", "9"), rowOf(".", "0", "⌫")]);
+      }
       case "tile": {
         // ticker | price | change [| lg]  — a card for a carousel; `lg` = big
         const big = /^(lg|big)$/i.test((f[3] || "").trim());
@@ -408,10 +421,21 @@
     return node.height;
   }
 
-  function finishScreen(rootNode, name) {
+  function finishScreen(rootNode, name, sheet) {
     rootNode.role = "screen";
-    rootNode.layout = Object.assign({ mode: "VERTICAL", paddingTop: 12, paddingBottom: 24, itemSpacing: SPACING, primaryAxisAlignItems: "MIN", counterAxisAlignItems: "STRETCH" }, rootNode.layout);
-    delete rootNode.layout.paddingLeft; delete rootNode.layout.paddingRight;
+    if (sheet) {
+      // Bottom sheet: a dimmed scrim with a rounded card anchored to the bottom.
+      const content = rootNode.children || [];
+      const grabber = frame("grabber", "NONE", {}, []); grabber.fixedW = 40;
+      const handle = frame("group", "HORIZONTAL", { primaryAxisAlignItems: "CENTER" }, [grabber]);
+      const card = frame("sheet", "VERTICAL", { paddingTop: 14, paddingBottom: 24, paddingLeft: 20, paddingRight: 20, itemSpacing: 16, counterAxisAlignItems: "STRETCH" }, [handle].concat(content));
+      rootNode.children = [card];
+      rootNode.layout = { mode: "VERTICAL", paddingTop: 0, paddingBottom: 0, itemSpacing: 0, primaryAxisAlignItems: "MAX", counterAxisAlignItems: "STRETCH" };
+      rootNode.fills = [{ type: "SOLID", color: "rgba(0,0,0,0.45)" }]; // scrim (pre-set so tokens keep it)
+    } else {
+      rootNode.layout = Object.assign({ mode: "VERTICAL", paddingTop: 12, paddingBottom: 24, itemSpacing: SPACING, primaryAxisAlignItems: "MIN", counterAxisAlignItems: "STRETCH" }, rootNode.layout);
+      delete rootNode.layout.paddingLeft; delete rootNode.layout.paddingRight;
+    }
     layoutNode(rootNode, 0, 0, DEVICE.width);
     rootNode.width = DEVICE.width; rootNode.height = DEVICE.height;
     return { schemaVersion: 1, source: "outline", name: name || "Screen", device: { width: DEVICE.width, height: DEVICE.height }, root: rootNode };
@@ -430,12 +454,16 @@
     }
     const groups = []; let cur = null; const stray = [];
     for (const n of top) {
-      if (n.role === "screen") { cur = { name: n.content || "Screen", node: n }; groups.push(cur); }
-      else if (cur) cur.node.children.push(n);
+      if (n.role === "screen") {
+        const cf = fields(n.content);
+        const sheet = cf.slice(1).some((x) => /sheet/i.test(x));
+        cur = { name: cf[0] || "Screen", node: n, sheet };
+        groups.push(cur);
+      } else if (cur) cur.node.children.push(n);
       else stray.push(n);
     }
     if (stray.length && groups.length) groups[0].node.children = stray.concat(groups[0].node.children);
-    return groups.map((g) => ({ name: g.name, spec: finishScreen(toSpecNode(g.node), g.name) }));
+    return groups.map((g) => ({ name: g.name, spec: finishScreen(toSpecNode(g.node), g.name, g.sheet) }));
   }
 
   function specFromOutline(text) { const list = specsFromOutline(text); return Array.isArray(list) && list.length ? (list[0].spec || list[0]) : null; }

@@ -174,7 +174,7 @@
     const ALIGN = { MIN: "flex-start", CENTER: "center", MAX: "flex-end", STRETCH: "stretch" };
     const TALIGN = { LEFT: "left", CENTER: "center", RIGHT: "right", JUSTIFIED: "justify" };
     // Roles that keep a fixed platform height (others hug their content).
-    const FIXED_H = { button: 1, buttonSecondary: 1, field: 1, listItem: 1, chip: 1, segmented: 1, appbar: 1, header: 1, tabbar: 1, avatar: 1, actionIcon: 1, iconBtn: 1, tabDot: 1, tabDotActive: 1, chart: 1, slider: 1, switch: 1, tag: 1, pillLong: 1, pillShort: 1, smallbtn: 1, tfmark: 1 };
+    const FIXED_H = { button: 1, buttonSecondary: 1, field: 1, listItem: 1, chip: 1, segmented: 1, appbar: 1, header: 1, tabbar: 1, avatar: 1, actionIcon: 1, iconBtn: 1, tabDot: 1, tabDotActive: 1, chart: 1, slider: 1, switch: 1, tag: 1, pillLong: 1, pillShort: 1, smallbtn: 1, tfmark: 1, key: 1, grabber: 1 };
     // Roles rendered as a fixed square (icon-like); they take their token size.
     const SQUARE = { avatar: 1, actionIcon: 1, iconBtn: 1, tabDot: 1, tabDotActive: 1, ghost: 1, appicon: 1 };
 
@@ -285,6 +285,7 @@
       // FRAME
       s.background = fillColor(node);
       if (node.cornerRadius) s.borderRadius = node.cornerRadius + "px";
+      if (node.role === "sheet") s.borderRadius = "22px 22px 0 0"; // rounded top only
       if (node.stroke) s.border = (node.strokeWeight || 1) + "px solid " + node.stroke;
 
       // Custom-drawn components.
@@ -342,7 +343,8 @@
       // Match the bezel's screen surface to the root fill (so dark themes don't
       // show a white sliver at the rounded corners).
       const bg = fillColor(spec.root);
-      screenEl.style.background = bg === "transparent" ? "#fff" : bg;
+      // A translucent scrim (bottom sheet) sits over white; anything else fills directly.
+      screenEl.style.background = (bg === "transparent" || bg.indexOf("rgba") === 0) ? "#fff" : bg;
       screenEl.innerHTML = "";
 
       const canvas = document.createElement("div");
@@ -463,6 +465,32 @@
       "  stat Margin | 120 USDT · Cross",
       "  stat Est. liq. price | ₹49,20,000",
       "  button Open Long · 10x",
+      "",
+      "screen Leverage | sheet",
+      "  heading Leverage",
+      "  stats Current Price:$2,981.11 | Liquidation at:$2,681.11",
+      "  bignum 20x",
+      "  slider 66",
+      "  buttons Save*",
+      "",
+      "screen TP-SL | sheet",
+      "  segmented % PnL | $ Price",
+      "  label Take Profit",
+      "  field %",
+      "  stat Approximate Profit | $0",
+      "  label Stop Loss",
+      "  field %",
+      "  stat Approximate Loss | $0",
+      "  buttons Save*",
+      "  chips 5% | 10% | 25% | MAX",
+      "  keypad",
+      "",
+      "screen Set Limit",
+      "  header X | Set Limit Price | ",
+      "  bignum $6,100 | -2.12%",
+      "  buttons Set Limit Price*",
+      "  chips -1% | -2% | -5% | ↕ %",
+      "  keypad",
       "",
       "screen Earn",
       "  header ‹ | Earn | ⌕",

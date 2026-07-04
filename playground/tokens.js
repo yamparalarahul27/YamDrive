@@ -48,7 +48,8 @@
       tfIdle:     { fontSize: 13, fontWeight: 500, color: "onBackgroundSecondary" },
       longText:   { fontSize: 12, fontWeight: 700, color: "positive" },
       shortText:  { fontSize: 12, fontWeight: 700, color: "negative" },
-      buttonTextAlt: { fontSize: 17, fontWeight: 600, color: "onBackground" }
+      buttonTextAlt: { fontSize: 17, fontWeight: 600, color: "onBackground" },
+      key:        { fontSize: 26, fontWeight: 500, color: "onBackground" }
     },
     light: {
       background: "#FFFFFF",
@@ -139,7 +140,8 @@
       tfIdle:     { fontSize: 13, fontWeight: 500, color: "onBackgroundSecondary" },
       longText:   { fontSize: 12, fontWeight: 700, color: "positive" },
       shortText:  { fontSize: 12, fontWeight: 700, color: "negative" },
-      buttonTextAlt: { fontSize: 14, fontWeight: 500, color: "onBackground" }
+      buttonTextAlt: { fontSize: 14, fontWeight: 500, color: "onBackground" },
+      key:        { fontSize: 24, fontWeight: 400, color: "onBackground" }
     },
     light: {
       background: "#FFFFFF",
@@ -373,6 +375,14 @@
         node.width = node.height = 56;
         node.cornerRadius = 14;
         setFill("primary");
+        break;
+      case "sheet":
+        setFill("background");
+        break;
+      case "grabber":
+        node.height = 5;
+        node.cornerRadius = 3;
+        setFill("outline");
         break;
       default:
         break;
