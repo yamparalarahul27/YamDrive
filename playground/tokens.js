@@ -363,6 +363,17 @@
         node.width = node.height = node.iconSize || 20;
         node.iconColor = resolveColor(pal, node.colorRole || "onBackground");
         break;
+      case "tile":
+        node.cornerRadius = 14;
+        node.stroke = resolveColor(pal, "outline");
+        node.strokeWeight = 1;
+        setFill("background");
+        break;
+      case "appicon":
+        node.width = node.height = 56;
+        node.cornerRadius = 14;
+        setFill("primary");
+        break;
       default:
         break;
     }

@@ -22,7 +22,7 @@
   const DEVICE = { width: 393, height: 852 };
   const MARGIN = 16, SPACING = 16, PAD = 16;
 
-  const CONTAINERS = { screen: 1, card: 1, row: 1, column: 1, section: 1, group: 1, list: 1 };
+  const CONTAINERS = { screen: 1, card: 1, row: 1, column: 1, section: 1, group: 1, list: 1, carousel: 1 };
   const TEXT_ROLES = {
     display: 1, title: 1, subtitle: 1, heading: 1, body: 1, label: 1, caption: 1,
     amount: 1, value: 1, symbol: 1, positive: 1, negative: 1, neutral: 1
@@ -31,7 +31,7 @@
     appbar: 1, header: 1, balance: 1, actions: 1, segmented: 1, chips: 1, chip: 1, asset: 1,
     tabbar: 1, avatar: 1, divider: 1, spacer: 1, chart: 1, stats: 1, stat: 1, slider: 1,
     switch: 1, banner: 1, tag: 1, trader: 1, orderform: 1, iconbtn: 1, quote: 1, timeframe: 1,
-    account: 1, buttons: 1, tabs: 1, statbar: 1, position: 1, posdetail: 1
+    account: 1, buttons: 1, tabs: 1, statbar: 1, position: 1, posdetail: 1, tile: 1, dapp: 1
   };
 
   const TEXT_HEIGHT = {
@@ -45,7 +45,7 @@
     button: 52, field: 52, listItem: 44, chip: 34, segmented: 40, appbar: 56, header: 56,
     tabbar: 72, iconBtn: 36, chart: 168, slider: 30, switch: 30, tag: 24, smallbtn: 34
   };
-  const COMPONENT_SIZE = { avatar: 40, actionIcon: 56, iconBtn: 36, tabDot: 22, tabDotActive: 22, ghost: 36 };
+  const COMPONENT_SIZE = { avatar: 40, actionIcon: 56, iconBtn: 36, tabDot: 22, tabDotActive: 22, ghost: 36, appicon: 56 };
 
   const GLYPH = { buy: "+", sell: "−", send: "↑", receive: "↓", deposit: "↓", withdraw: "↑", transfer: "⇄", swap: "⇄", trade: "⇄", history: "↻", more: "⋯", "…": "⋯", "⋯": "⋯" };
 
@@ -236,6 +236,20 @@
       }
       case "tabs":
         return buildComposite("timeframe", content);
+      case "tile": {
+        // ticker | price | change  — a small card for a carousel
+        const t = frame("tile", "VERTICAL", { paddingTop: 12, paddingBottom: 12, paddingLeft: 12, paddingRight: 12, itemSpacing: 6, counterAxisAlignItems: "MIN" }, [
+          avatar(f[0]), txt("caption", f[0] || ""), txt("value", f[1] || ""), txt(changeRole(f[2]), f[2] || "")
+        ]);
+        t.fixedW = 132;
+        return t;
+      }
+      case "dapp": {
+        const app = frame("appicon", "HORIZONTAL", { primaryAxisAlignItems: "CENTER", counterAxisAlignItems: "CENTER" }, [txt("avatarText", initials(f[0]), "CENTER")]);
+        const d = frame("group", "VERTICAL", { itemSpacing: 6, primaryAxisAlignItems: "CENTER", counterAxisAlignItems: "CENTER" }, [app, txt("caption", f[0] || "", "CENTER")]);
+        d.fixedW = 72;
+        return d;
+      }
       case "account": {
         // amount | change...Today | available  (balance card with hide-eye)
         const amountRow = frame("group", "HORIZONTAL", { primaryAxisAlignItems: "SPACE_BETWEEN", counterAxisAlignItems: "CENTER" }, [txt("amount", f[0] || ""), iconNode("eye-slash", 22, "onBackgroundSecondary", "◡")]);
@@ -324,6 +338,21 @@
 
   function toSpecNode(node) {
     if (node.composite) { const built = buildComposite(node.role, node.content); if (built) return built; }
+    // A titled section with a horizontally scrolling row of cards.
+    if (node.role === "carousel") {
+      const cf = fields(node.content);
+      const flags = cf.slice(1).map((s) => s.toLowerCase());
+      const leftKids = [];
+      if (flags.indexOf("new") >= 0) leftKids.push(frame("pillShort", "HORIZONTAL", { paddingLeft: 8, paddingRight: 8, primaryAxisAlignItems: "CENTER", counterAxisAlignItems: "CENTER" }, [txt("shortText", "New", "CENTER")]));
+      leftKids.push(txt("heading", cf[0] || ""));
+      const header = frame("group", "HORIZONTAL", { primaryAxisAlignItems: "SPACE_BETWEEN", counterAxisAlignItems: "CENTER" }, [
+        frame("group", "HORIZONTAL", { itemSpacing: 8, counterAxisAlignItems: "CENTER" }, leftKids),
+        iconNode("caret-right", 20, "onBackgroundSecondary", ">")
+      ]);
+      const body = frame("group", "HORIZONTAL", { itemSpacing: 12, counterAxisAlignItems: "MIN" }, (node.children || []).map(toSpecNode));
+      body.scrollX = true;
+      return frame("group", "VERTICAL", { itemSpacing: 12, counterAxisAlignItems: "STRETCH" }, [header, body]);
+    }
     const name = (node.content || node.role).slice(0, 40) || node.role;
     if (TEXT_ROLES[node.role]) return txt(node.role, node.content || "", "LEFT");
     if (node.role === "listItem") return frame("listItem", "HORIZONTAL", { itemSpacing: 8, counterAxisAlignItems: "CENTER" }, [txt("body", node.content || "", "LEFT")]);
@@ -362,6 +391,7 @@
 
   function layoutNode(node, x, y, width) {
     node.x = x; node.y = y; node.width = width;
+    if (node.fixedW) { node.width = node.fixedW; width = node.fixedW; }
     if (node.type === "TEXT") { node.height = TEXT_HEIGHT[node.role] || 24; return node.height; }
     if (node.role === "spacer") { node.height = node.spacerSize || 16; return node.height; }
     if (node.role === "divider") { node.height = 1; return node.height; }

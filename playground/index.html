@@ -176,7 +176,7 @@
     // Roles that keep a fixed platform height (others hug their content).
     const FIXED_H = { button: 1, buttonSecondary: 1, field: 1, listItem: 1, chip: 1, segmented: 1, appbar: 1, header: 1, tabbar: 1, avatar: 1, actionIcon: 1, iconBtn: 1, tabDot: 1, tabDotActive: 1, chart: 1, slider: 1, switch: 1, tag: 1, pillLong: 1, pillShort: 1, smallbtn: 1, tfmark: 1 };
     // Roles rendered as a fixed square (icon-like); they take their token size.
-    const SQUARE = { avatar: 1, actionIcon: 1, iconBtn: 1, tabDot: 1, tabDotActive: 1, ghost: 1 };
+    const SQUARE = { avatar: 1, actionIcon: 1, iconBtn: 1, tabDot: 1, tabDotActive: 1, ghost: 1, appicon: 1 };
 
     // Custom-drawn components (chart / slider / switch) build their own DOM.
     function drawChart(el, node) {
@@ -266,6 +266,7 @@
         s.flex = node.grow ? "1 1 0" : "0 0 auto";
         s.minWidth = "0";
         if (square || node.role === "tfmark") { s.width = node.width + "px"; s.height = node.height + "px"; }
+        else if (node.fixedW) s.width = node.fixedW + "px";
       }
       if (typeof node.opacity === "number") s.opacity = String(node.opacity);
 
@@ -317,6 +318,8 @@
         s.gap = (lay.itemSpacing || 0) + "px";
         s.justifyContent = JUSTIFY[lay.primaryAxisAlignItems] || "flex-start";
         s.alignItems = ALIGN[lay.counterAxisAlignItems] || "flex-start";
+        // Horizontally scrolling carousels: don't clip, let the row scroll.
+        if (node.scrollX) { s.overflowX = "auto"; s.overflowY = "hidden"; s.flexWrap = "nowrap"; }
         children.forEach(c => el.appendChild(renderNode(c, false)));
       } else {
         if (!absolute) s.height = node.height + "px";
@@ -385,6 +388,29 @@
       "  asset SOL | Solana | ₹12,650 | +6.8%",
       "  asset XRP | Ripple | ₹52.30 | +0.9%",
       "  asset USDT | Tether | ₹89.10 | 0.0%",
+      "  tabbar Home | Markets | Trade | Earn | Wallet",
+      "",
+      "screen Explore",
+      "  title Explore",
+      "  carousel Trending Stocks | new",
+      "    tile XY100 | $29,871.01 | +0.85%",
+      "    tile CL | $80.14 | +0.35%",
+      "    tile SP500 | $7,478.00 | +1.02%",
+      "  carousel Trending Perps | new",
+      "    tile BTC | $65,511.04 | +1.25%",
+      "    tile ETH | $1,674.88 | +0.89%",
+      "    tile SOL | $68.38 | +1.32%",
+      "    tile ZEC | $425.30 | +3.11%",
+      "  carousel Featured xStocks",
+      "    tile AAPLx | $228.52 | +0.74%",
+      "    tile TSLAx | $412.18 | +2.10%",
+      "    tile NVDAx | $150.19 | +0.23%",
+      "    tile MSFTx | $512.90 | +0.41%",
+      "  carousel Top Movers",
+      "    tile Humanity | $0.61 | +681.44%",
+      "    tile Beat | $5.98 | +428.07%",
+      "    tile Velvet | $0.53 | +40.95%",
+      "    tile Backpack | $0.40 | +31.92%",
       "  tabbar Home | Markets | Trade | Earn | Wallet",
       "",
       "screen Coin",
