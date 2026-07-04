@@ -44,6 +44,9 @@
     button:active { transform: translateY(1px); }
     .toggle { font-size: 12px; color: var(--muted); display: inline-flex; align-items: center; gap: 6px; cursor: pointer; user-select: none; }
     .toggle input { accent-color: var(--accent); }
+    .tabs { display: flex; gap: 4px; padding: 8px 18px 0; }
+    .tab { border: none; border-bottom: 2px solid transparent; background: none; border-radius: 0; padding: 6px 4px; color: var(--muted); font-size: 12px; font-weight: 600; }
+    .tab.active { color: var(--ink); border-bottom-color: var(--accent); }
     textarea {
       flex: 1; min-height: 0; width: 100%; resize: none; border: none; outline: none;
       padding: 14px 18px; font-family: var(--mono); font-size: 12px; line-height: 1.5;
@@ -77,15 +80,20 @@
   <section class="editor">
     <header>
       <h1>Mobile Design Playground</h1>
-      <p>Paste a <code>layout.json</code> spec (same schema the capture tool and Figma plugin use). It renders live inside iPhone and Android mockups.</p>
+      <p><b>Describe</b> a screen as an outline, or edit the <code>layout.json</code> directly. It renders live in iPhone + Android mockups. Same schema as the capture tool and Figma plugin.</p>
     </header>
+    <div class="tabs">
+      <button class="tab active" id="tabDescribe">Describe</button>
+      <button class="tab" id="tabJson">layout.json</button>
+    </div>
     <div class="toolbar">
       <button class="primary" id="render">Render</button>
       <button id="loadExample">Load example</button>
       <button id="format">Format JSON</button>
       <label class="toggle"><input type="checkbox" id="guidelines" checked /> Apply Apple / Material guidelines</label>
     </div>
-    <textarea id="input" spellcheck="false" autocomplete="off"></textarea>
+    <textarea id="outline" spellcheck="false" autocomplete="off" placeholder="screen Sign in&#10;  title Welcome back&#10;  field Email address&#10;  button Sign in"></textarea>
+    <textarea id="input" spellcheck="false" autocomplete="off" hidden></textarea>
     <div class="status" id="status"></div>
   </section>
 
@@ -101,6 +109,7 @@
   </section>
 
   <script src="tokens.js"></script>
+  <script src="generator.js"></script>
   <script>
     // Target on-screen width (CSS px) each mockup renders at; the spec's point
     // dimensions are scaled to fit this so different device sizes look right.
@@ -193,12 +202,16 @@
       s.background = fillColor(node);
       if (node.cornerRadius) s.borderRadius = node.cornerRadius + "px";
       if (node.stroke) s.border = (node.strokeWeight || 1) + "px solid " + node.stroke;
-      if (!absolute) s.height = node.height + "px";
 
       const lay = node.layout || { mode: "NONE" };
       const children = Array.isArray(node.children) ? node.children : [];
+      // Component roles keep a fixed platform height; layout containers hug
+      // their content (matching Figma auto-layout "hug"), so token-driven child
+      // height changes never clip a container.
+      const fixedHeight = node.role === "button" || node.role === "field" || node.role === "listItem";
 
       if (lay.mode === "VERTICAL" || lay.mode === "HORIZONTAL") {
+        if (!absolute && fixedHeight) { s.height = node.height + "px"; s.overflow = "hidden"; }
         s.display = "flex";
         s.flexDirection = lay.mode === "VERTICAL" ? "column" : "row";
         s.paddingTop = (lay.paddingTop || 0) + "px";
@@ -208,9 +221,9 @@
         s.gap = (lay.itemSpacing || 0) + "px";
         s.justifyContent = JUSTIFY[lay.primaryAxisAlignItems] || "flex-start";
         s.alignItems = ALIGN[lay.counterAxisAlignItems] || "flex-start";
-        s.overflow = "hidden";
         children.forEach(c => el.appendChild(renderNode(c, false)));
       } else {
+        if (!absolute) s.height = node.height + "px";
         s.position = "relative";
         s.overflow = "hidden";
         children.forEach(c => el.appendChild(renderNode(c, true)));
@@ -240,12 +253,34 @@
       screenEl.appendChild(canvas);
     }
 
+    const OUTLINE_EXAMPLE = [
+      "screen Sign in",
+      "  title Welcome back",
+      "  subtitle Sign in to continue",
+      "  field Email address",
+      "  field Password",
+      "  button Sign in"
+    ].join("\n");
+
     const input = document.getElementById("input");
+    const outline = document.getElementById("outline");
     const status = document.getElementById("status");
+    let mode = "describe"; // "describe" | "json"
 
     function setStatus(msg, kind) { status.textContent = msg; status.className = "status " + (kind || ""); }
 
+    // In describe mode, generate the spec from the outline and mirror it into
+    // the JSON textarea so the two views stay in sync.
+    function syncFromOutline() {
+      try {
+        const spec = specFromOutline(outline.value);
+        input.value = JSON.stringify(spec, null, 2);
+        return true;
+      } catch (e) { setStatus("Outline error: " + e.message, "err"); return false; }
+    }
+
     function render() {
+      if (mode === "describe" && !syncFromOutline()) return;
       let spec;
       try { spec = JSON.parse(input.value); }
       catch (e) { setStatus("JSON parse error: " + e.message, "err"); return; }
@@ -264,16 +299,48 @@
       } catch (e) { setStatus("Render error: " + e.message, "err"); }
     }
 
+    const tabDescribe = document.getElementById("tabDescribe");
+    const tabJson = document.getElementById("tabJson");
+    const btnExample = document.getElementById("loadExample");
+    const btnFormat = document.getElementById("format");
+
+    function setMode(next) {
+      mode = next;
+      const describing = mode === "describe";
+      tabDescribe.classList.toggle("active", describing);
+      tabJson.classList.toggle("active", !describing);
+      outline.hidden = !describing;
+      input.hidden = describing;
+      btnFormat.hidden = describing;         // formatting only makes sense for JSON
+      render();
+    }
+
+    tabDescribe.addEventListener("click", () => setMode("describe"));
+    tabJson.addEventListener("click", () => {
+      // Carry the current outline's generated JSON into the editor when switching.
+      if (mode === "describe") syncFromOutline();
+      setMode("json");
+    });
+
     document.getElementById("render").addEventListener("click", render);
     document.getElementById("guidelines").addEventListener("change", render);
-    document.getElementById("loadExample").addEventListener("click", () => { input.value = JSON.stringify(EXAMPLE, null, 2); render(); });
-    document.getElementById("format").addEventListener("click", () => {
+    btnExample.addEventListener("click", () => {
+      if (mode === "describe") outline.value = OUTLINE_EXAMPLE;
+      else input.value = JSON.stringify(EXAMPLE, null, 2);
+      render();
+    });
+    btnFormat.addEventListener("click", () => {
       try { input.value = JSON.stringify(JSON.parse(input.value), null, 2); setStatus("Formatted.", "ok"); }
       catch (e) { setStatus("Cannot format: " + e.message, "err"); }
     });
-    // Re-render shortly after typing stops.
-    let t; input.addEventListener("input", () => { clearTimeout(t); t = setTimeout(render, 500); });
 
+    // Re-render shortly after typing stops, in whichever editor is active.
+    let t;
+    const onType = () => { clearTimeout(t); t = setTimeout(render, 500); };
+    input.addEventListener("input", onType);
+    outline.addEventListener("input", onType);
+
+    outline.value = OUTLINE_EXAMPLE;
     input.value = JSON.stringify(EXAMPLE, null, 2);
     render();
   </script>
