@@ -43,9 +43,12 @@
       actionGlyph:{ fontSize: 22, fontWeight: 600, color: "onPrimary" },
       tabLabelActive: { fontSize: 11, fontWeight: 600, color: "primary" },
       navTitle:   { fontSize: 17, fontWeight: 600, color: "onBackground" },
-      tagText:    { fontSize: 12, fontWeight: 600, color: "primary" }
+      tagText:    { fontSize: 12, fontWeight: 600, color: "primary" },
+      tfActive:   { fontSize: 13, fontWeight: 700, color: "onBackground" },
+      tfIdle:     { fontSize: 13, fontWeight: 500, color: "onBackgroundSecondary" }
     },
-    color: {
+    light: {
+      background: "#FFFFFF",
       onBackground: "#1D1D1F",
       onBackgroundSecondary: "#6E6E73",
       primary: "#0A84FF",
@@ -57,6 +60,20 @@
       negative: "#FF3B30",
       segmentSel: "#FFFFFF",
       infoBg: "#EAF3FF"
+    },
+    dark: {
+      background: "#000000",
+      onBackground: "#F5F5F7",
+      onBackgroundSecondary: "#98989D",
+      primary: "#0A84FF",
+      onPrimary: "#FFFFFF",
+      surfaceVariant: "#1C1C1E",
+      placeholder: "#8E8E93",
+      outline: "#38383A",
+      positive: "#30D158",
+      negative: "#FF453B",
+      segmentSel: "#2C2C2E",
+      infoBg: "#0E2A47"
     },
     // Component metrics (points). 8pt spacing grid; 44pt minimum tap target.
     metrics: {
@@ -110,9 +127,12 @@
       actionGlyph:{ fontSize: 22, fontWeight: 500, color: "onPrimary" },
       tabLabelActive: { fontSize: 12, fontWeight: 600, color: "primary" },
       navTitle:   { fontSize: 20, fontWeight: 500, color: "onBackground" },
-      tagText:    { fontSize: 12, fontWeight: 600, color: "primary" }
+      tagText:    { fontSize: 12, fontWeight: 600, color: "primary" },
+      tfActive:   { fontSize: 13, fontWeight: 700, color: "onBackground" },
+      tfIdle:     { fontSize: 13, fontWeight: 500, color: "onBackgroundSecondary" }
     },
-    color: {
+    light: {
+      background: "#FFFFFF",
       onBackground: "#1C1B1F",
       onBackgroundSecondary: "#49454F",
       primary: "#6750A4",
@@ -124,6 +144,20 @@
       negative: "#B3261E",
       segmentSel: "#E8DEF8",
       infoBg: "#EADDFF"
+    },
+    dark: {
+      background: "#141218",
+      onBackground: "#E6E1E5",
+      onBackgroundSecondary: "#CAC4D0",
+      primary: "#D0BCFF",
+      onPrimary: "#381E72",
+      surfaceVariant: "#2B2930",
+      placeholder: "#938F99",
+      outline: "#48454E",
+      positive: "#7FD98B",
+      negative: "#F2B8B5",
+      segmentSel: "#4A4458",
+      infoBg: "#332D41"
     },
     // Material metrics (dp). 4/8dp grid; 48dp minimum touch target; full-radius buttons.
     metrics: {
@@ -158,27 +192,28 @@
 
   function clone(v) { return JSON.parse(JSON.stringify(v)); }
 
-  function resolveColor(t, roleOrHex) {
+  function resolveColor(pal, roleOrHex) {
     if (!roleOrHex) return roleOrHex;
-    return t.color[roleOrHex] || roleOrHex; // pass through raw hex
+    return pal[roleOrHex] || roleOrHex; // pass through raw hex
   }
 
   // Apply a TEXT node's role. Tagging a role means "use this platform's type
   // scale", so font size/weight follow the scale; an explicit color still wins.
-  function styleText(node, t) {
+  function styleText(node, t, pal) {
     const scale = node.role && t.type[node.role];
     if (!scale) return;
     node.fontSize = scale.fontSize;
     node.fontWeight = scale.fontWeight;
-    if (node.color == null) node.color = resolveColor(t, scale.color);
+    if (node.color == null) node.color = resolveColor(pal, scale.color);
   }
 
   // Apply a FRAME's role. Component metrics (height, radius) are the guideline
   // and override authored geometry; fills only fill when the author left none.
-  function styleFrame(node, t, isRoot) {
+  // `pal` is the active light/dark color palette.
+  function styleFrame(node, t, pal, isRoot) {
     const hasFill = Array.isArray(node.fills) && node.fills.length > 0;
     const setFill = (roleOrHex) => {
-      if (!hasFill) node.fills = [{ type: "SOLID", color: resolveColor(t, roleOrHex) }];
+      if (!hasFill) node.fills = [{ type: "SOLID", color: resolveColor(pal, roleOrHex) }];
     };
 
     switch (node.role) {
@@ -204,7 +239,7 @@
         break;
       case "tabbar":
         node.height = t.metrics.tabbar.height;
-        setFill("#FFFFFF");
+        setFill("background");
         break;
       case "chip":
         node.height = t.metrics.chip.height;
@@ -270,30 +305,37 @@
         setFill("infoBg");
         break;
       case "chart":
-        node.height = t.metrics.chart.height;
-        node.lineColor = node.up === false ? t.color.negative : t.color.positive;
+        node.height = node.bleed ? 240 : t.metrics.chart.height;
+        node.lineColor = node.up === false ? pal.negative : pal.positive;
+        if (node.bleed) node.bleedMargin = t.metrics.screenMargin;
         break;
       case "slider":
         node.height = t.metrics.slider.height;
         node.trackH = t.metrics.slider.track;
         node.knobSize = t.metrics.slider.knob;
-        node.fillColor = t.color.primary;
-        node.trackColor = t.color.outline;
+        node.fillColor = pal.primary;
+        node.trackColor = pal.outline;
         break;
       case "switch":
         node.width = t.metrics.switch.width;
         node.height = t.metrics.switch.height;
         node.knobSize = t.metrics.switch.knob;
-        node.onColor = t.color.primary;
-        node.offColor = t.color.outline;
-        node.knobColor = t.color.onPrimary;
+        node.onColor = pal.primary;
+        node.offColor = pal.outline;
+        node.knobColor = pal.onPrimary;
+        break;
+      case "tfmark":
+        node.width = 16;
+        node.height = 3;
+        node.cornerRadius = 2;
+        setFill("primary");
         break;
       default:
         break;
     }
 
     if (isRoot || node.role === "screen") {
-      if (!hasFill) node.fills = [{ type: "SOLID", color: "#FFFFFF" }];
+      if (!hasFill) node.fills = [{ type: "SOLID", color: resolveColor(pal, "background") }];
       // Apply platform screen margins + spacing only where the author left gaps.
       const lay = node.layout;
       if (lay && (lay.mode === "VERTICAL" || lay.mode === "HORIZONTAL")) {
@@ -305,22 +347,25 @@
     }
   }
 
-  function walk(node, t, isRoot) {
+  function walk(node, t, pal, isRoot) {
     if (!node || typeof node !== "object") return;
-    if (node.type === "TEXT") { styleText(node, t); return; }
+    if (node.type === "TEXT") { styleText(node, t, pal); return; }
     // FRAME
-    styleFrame(node, t, isRoot);
-    if (Array.isArray(node.children)) node.children.forEach((c) => walk(c, t, false));
+    styleFrame(node, t, pal, isRoot);
+    if (Array.isArray(node.children)) node.children.forEach((c) => walk(c, t, pal, false));
   }
 
-  // Return a styled deep copy of `spec` for the given platform ("ios"|"android").
-  function applyPlatformDefaults(spec, platform) {
+  // Return a styled deep copy of `spec` for the given platform ("ios"|"android")
+  // and theme ("light"|"dark", default light).
+  function applyPlatformDefaults(spec, platform, theme) {
     const t = TOKENS[platform];
     if (!t || !spec || !spec.root) return spec;
+    const pal = theme === "dark" ? t.dark : t.light;
     const out = clone(spec);
     out.platform = platform;
+    out.theme = theme === "dark" ? "dark" : "light";
     out.fontFamily = t.fontFamily;
-    walk(out.root, t, true);
+    walk(out.root, t, pal, true);
     return out;
   }
 

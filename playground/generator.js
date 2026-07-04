@@ -30,14 +30,14 @@
   const COMPOSITES = {
     appbar: 1, header: 1, balance: 1, actions: 1, segmented: 1, chips: 1, chip: 1, asset: 1,
     tabbar: 1, avatar: 1, divider: 1, spacer: 1, chart: 1, stats: 1, stat: 1, slider: 1,
-    switch: 1, banner: 1, tag: 1, trader: 1, orderform: 1, iconbtn: 1
+    switch: 1, banner: 1, tag: 1, trader: 1, orderform: 1, iconbtn: 1, quote: 1, timeframe: 1
   };
 
   const TEXT_HEIGHT = {
     display: 44, title: 42, heading: 32, subtitle: 26, body: 24, label: 22, caption: 18,
     amount: 44, value: 24, symbol: 20, positive: 22, negative: 22, neutral: 22,
     placeholder: 24, buttonText: 24, avatarText: 22, actionGlyph: 26, tabLabelActive: 16,
-    navTitle: 24, tagText: 18, statValue: 24
+    navTitle: 24, tagText: 18, statValue: 24, tfActive: 18, tfIdle: 18
   };
   const COMPONENT_H = {
     button: 52, field: 52, listItem: 44, chip: 34, segmented: 40, appbar: 56, header: 56,
@@ -156,9 +156,31 @@
       case "spacer": { const n = parseInt(f[0], 10); const sp = frame("spacer", "NONE", {}, []); sp.spacerSize = isNaN(n) ? 16 : n; return sp; }
       case "chart": {
         const up = changeRole(f[0]) !== "negative";
+        const opts = (f[1] || "").toLowerCase().split(/\s+/);
         const c = frame("chart", "NONE", {}, []);
         c.up = up; c.points = chartPoints(content || "chart", up);
+        c.lineOnly = opts.indexOf("line") >= 0;
+        c.bleed = opts.indexOf("bleed") >= 0;
         return c;
+      }
+      case "quote": {
+        // logo + ticker/exchange + big price + change + bookmark
+        const idRow = frame("group", "HORIZONTAL", { itemSpacing: 6, counterAxisAlignItems: "CENTER" }, [txt("value", f[0] || ""), txt("symbol", f[1] || "")]);
+        const priceRow = frame("group", "HORIZONTAL", { primaryAxisAlignItems: "SPACE_BETWEEN", counterAxisAlignItems: "CENTER" }, [
+          frame("group", "HORIZONTAL", { itemSpacing: 10, counterAxisAlignItems: "CENTER" }, [txt("amount", f[2] || ""), txt(changeRole(f[3]), f[3] || "")]),
+          txt("navTitle", "☆", "RIGHT")
+        ]);
+        return frame("group", "VERTICAL", { itemSpacing: 10, counterAxisAlignItems: "MIN" }, [avatar(f[0]), idRow, priceRow]);
+      }
+      case "timeframe": {
+        const tabs = f.filter(Boolean).map((o) => {
+          const sel = /\*$/.test(o);
+          const label = o.replace(/\*$/, "").trim();
+          const kids = [txt(sel ? "tfActive" : "tfIdle", label, "CENTER")];
+          if (sel) kids.push(frame("tfmark", "NONE", {}, []));
+          return frame("group", "VERTICAL", { itemSpacing: 5, primaryAxisAlignItems: "CENTER", counterAxisAlignItems: "CENTER" }, kids);
+        });
+        return frame("group", "HORIZONTAL", { primaryAxisAlignItems: "SPACE_BETWEEN", counterAxisAlignItems: "CENTER" }, tabs);
       }
       case "stats": {
         const tiles = f.filter(Boolean).map((it) => {
@@ -279,6 +301,7 @@
     if (node.type === "TEXT") { node.height = TEXT_HEIGHT[node.role] || 24; return node.height; }
     if (node.role === "spacer") { node.height = node.spacerSize || 16; return node.height; }
     if (node.role === "divider") { node.height = 1; return node.height; }
+    if (node.role === "tfmark") { node.width = 16; node.height = 3; return node.height; }
     const size = COMPONENT_SIZE[node.role];
     if (size != null) { node.width = size; layoutChildren(node, x, size); node.height = size; return node.height; }
     const content = layoutChildren(node, x, width);

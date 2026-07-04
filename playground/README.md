@@ -31,6 +31,11 @@ viewport; the content reflows into it (auto-layout stretches/hugs rather than
 rotating). A portrait screen taller than the landscape height clips at the
 bottom, as it would on a device that doesn't re-flow for landscape.
 
+**Dark** — the *Dark* checkbox renders the same spec with each platform's dark
+palette (Apple + Material 3). It's a color swap on top of the role/token system,
+so every screen has a dark variant for free — good for chart-forward asset
+views like the built-in `Asset` (NVDA) screen.
+
 ## Two ways to author
 
 1. **Fully-styled spec** — set `fontSize`, `color`, `fills`, `cornerRadius`,
@@ -91,6 +96,9 @@ a real financial product (e.g. a crypto exchange):
 | `tabbar Home \| Markets \| Trade \| Wallet` | bottom nav with divider (first selected) |
 | `header ‹ \| Title \| ☆` | detail nav bar: back, centered title, action |
 | `chart +2.4%` | price sparkline; sign sets the line color |
+| `chart +0.23% \| bleed line` | full-bleed, line-only chart (options: `bleed`, `line`) |
+| `quote NVDA \| Nasdaq \| $150.19 \| +0.34 (+0.23%)` | asset header: logo, ticker/exchange, big price, change, bookmark |
+| `timeframe 1D \| 1W* \| 1M \| 3M \| 1Y \| All` | timeframe tabs; `*` marks the selected one (underlined) |
 | `orderform BTC \| INR` | Buy/Sell tabs + amount + slider + total + button |
 | `slider 25` | progress/percentage slider at 25% |
 | `switch UPI \| on` | labeled row with an on/off toggle |
