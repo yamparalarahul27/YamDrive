@@ -26,6 +26,11 @@ is an end-to-end crypto-exchange flow (Home/Lite, Markets, Coin, spot Buy,
 Futures/Pro, Earn/Coin Sets, Bonus, Wallet, Deposit) with INR, 1% TDS, KYC and
 UPI context, and a Lite→Pro progressive-disclosure toggle.
 
+**Landscape** — the toolbar's *Landscape* checkbox flips both mockups to a wide
+viewport; the content reflows into it (auto-layout stretches/hugs rather than
+rotating). A portrait screen taller than the landscape height clips at the
+bottom, as it would on a device that doesn't re-flow for landscape.
+
 ## Two ways to author
 
 1. **Fully-styled spec** — set `fontSize`, `color`, `fills`, `cornerRadius`,

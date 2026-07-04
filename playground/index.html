@@ -77,6 +77,10 @@
     .android .screen { border-radius: 26px; overflow: hidden; position: relative; background: #fff; }
     .android .punch { position: absolute; top: 12px; left: 50%; transform: translateX(-50%); width: 11px; height: 11px; background: #0b0b0c; border-radius: 50%; z-index: 20; }
 
+    /* Landscape: move the notch/punch to the left edge (device turned 90°). */
+    .iphone.land .island { top: 50%; left: 10px; transform: translateY(-50%); width: 26px; height: 32%; }
+    .android.land .punch { top: 50%; left: 12px; transform: translateY(-50%); }
+
     .screen .canvas { transform-origin: top left; }
     .node-text { white-space: pre-wrap; overflow: hidden; }
   </style>
@@ -96,6 +100,7 @@
       <button id="loadExample">Load example</button>
       <button id="format">Format JSON</button>
       <label class="toggle"><input type="checkbox" id="guidelines" checked /> Apply Apple / Material guidelines</label>
+      <label class="toggle"><input type="checkbox" id="landscape" /> Landscape</label>
     </div>
     <textarea id="outline" spellcheck="false" autocomplete="off" placeholder="screen Sign in&#10;  title Welcome back&#10;  field Email address&#10;  button Sign in"></textarea>
     <textarea id="input" spellcheck="false" autocomplete="off" hidden></textarea>
@@ -123,6 +128,7 @@
     // dimensions are scaled to fit this so different device sizes look right.
     const IOS_W = 300;
     const ANDROID_W = 300;
+    const LANDSCAPE_W = 430; // on-screen width per device when rotated
 
     // Role-based spec: it names each node's semantic `role` and carries content
     // + geometry, but leaves typography, colors, and component metrics to the
@@ -295,8 +301,11 @@
       return el;
     }
 
-    function paint(screenEl, spec, targetW) {
-      const dev = spec.device || { width: spec.root.width, height: spec.root.height };
+    function paint(screenEl, spec, targetW, landscape) {
+      const base = spec.device || { width: spec.root.width, height: spec.root.height };
+      // Landscape swaps the viewport; the content reflows into the wider, shorter
+      // screen (auto-layout stretches/hugs, so it adapts rather than rotating).
+      const dev = landscape ? { width: base.height, height: base.width } : base;
       const scale = targetW / dev.width;
       screenEl.style.width = Math.round(dev.width * scale) + "px";
       screenEl.style.height = Math.round(dev.height * scale) + "px";
@@ -451,11 +460,16 @@
       const errs = validate(spec);
       if (errs.length) { setStatus("Schema issues:\n• " + errs.slice(0, 8).join("\n• "), "err"); return; }
       const useGuidelines = document.getElementById("guidelines").checked;
+      const land = document.getElementById("landscape").checked;
       try {
-        paint(document.getElementById("iosScreen"), useGuidelines ? applyPlatformDefaults(spec, "ios") : spec, IOS_W);
-        paint(document.getElementById("androidScreen"), useGuidelines ? applyPlatformDefaults(spec, "android") : spec, ANDROID_W);
-        document.getElementById("iosLabel").textContent = useGuidelines ? "iPhone · Apple HIG" : "iPhone · iOS";
-        document.getElementById("androidLabel").textContent = useGuidelines ? "Pixel · Material 3" : "Pixel · Android";
+        const tw = land ? LANDSCAPE_W : IOS_W;
+        paint(document.getElementById("iosScreen"), useGuidelines ? applyPlatformDefaults(spec, "ios") : spec, tw, land);
+        paint(document.getElementById("androidScreen"), useGuidelines ? applyPlatformDefaults(spec, "android") : spec, tw, land);
+        document.querySelector(".iphone").classList.toggle("land", land);
+        document.querySelector(".android").classList.toggle("land", land);
+        const orient = land ? " · landscape" : "";
+        document.getElementById("iosLabel").textContent = (useGuidelines ? "iPhone · Apple HIG" : "iPhone · iOS") + orient;
+        document.getElementById("androidLabel").textContent = (useGuidelines ? "Pixel · Material 3" : "Pixel · Android") + orient;
         buildScreenbar();
         if (mode === "describe") input.value = JSON.stringify(spec, null, 2);
         const many = screens.length > 1 ? " · screen " + (active + 1) + "/" + screens.length : "";
@@ -500,6 +514,7 @@
 
     document.getElementById("render").addEventListener("click", render);
     document.getElementById("guidelines").addEventListener("change", render);
+    document.getElementById("landscape").addEventListener("change", () => paintActive());
     btnExample.addEventListener("click", () => {
       if (mode === "describe") outline.value = OUTLINE_EXAMPLE;
       else input.value = JSON.stringify(EXAMPLE, null, 2);
