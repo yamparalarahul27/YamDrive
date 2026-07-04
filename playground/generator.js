@@ -32,7 +32,8 @@
     tabbar: 1, avatar: 1, divider: 1, spacer: 1, chart: 1, stats: 1, stat: 1, slider: 1,
     switch: 1, banner: 1, tag: 1, trader: 1, orderform: 1, iconbtn: 1, quote: 1, timeframe: 1,
     account: 1, buttons: 1, tabs: 1, statbar: 1, position: 1, posdetail: 1, tile: 1, dapp: 1,
-    keypad: 1, bignum: 1, receipthead: 1, sharebtn: 1, cardbig: 1
+    keypad: 1, bignum: 1, receipthead: 1, sharebtn: 1, cardbig: 1,
+    back: 1, progress: 1, level: 1
   };
 
   const TEXT_HEIGHT = {
@@ -45,7 +46,7 @@
   const COMPONENT_H = {
     button: 52, field: 52, listItem: 44, chip: 34, segmented: 40, appbar: 56, header: 56,
     tabbar: 72, iconBtn: 36, chart: 168, slider: 30, switch: 30, tag: 24, smallbtn: 34,
-    key: 52, grabber: 5
+    key: 52, grabber: 5, progress: 10
   };
   const COMPONENT_SIZE = { avatar: 40, actionIcon: 56, iconBtn: 36, tabDot: 22, tabDotActive: 22, ghost: 36, appicon: 56 };
 
@@ -271,6 +272,27 @@
         card.blue = blue;
         return card;
       }
+      case "back":
+        return frame("group", "HORIZONTAL", { itemSpacing: 6, primaryAxisAlignItems: "MIN", counterAxisAlignItems: "CENTER" }, [iconNode("back", 22, "#FFFFFF"), txtC("navTitle", f[0] || "Back", "#FFFFFF")]);
+      case "progress": {
+        const p = parseInt(f[0], 10);
+        const pr = frame("progress", "NONE", {}, []); pr.pct = isNaN(p) ? 50 : Math.max(0, Math.min(100, p)); pr.fixedW = 220;
+        return pr;
+      }
+      case "level": {
+        // levelNum | reward | pct  — rewards hero (white on gradient)
+        const white = "#FFFFFF", faint = "rgba(255,255,255,0.8)";
+        const leafR = iconNode("leaf", 64, "rgba(255,255,255,0.85)"); leafR.flip = true;
+        const emblem = frame("group", "HORIZONTAL", { itemSpacing: 6, primaryAxisAlignItems: "CENTER", counterAxisAlignItems: "CENTER" }, [
+          iconNode("leaf", 64, "rgba(255,255,255,0.85)"),
+          frame("group", "VERTICAL", { itemSpacing: 0, primaryAxisAlignItems: "CENTER", counterAxisAlignItems: "CENTER" }, [txtC("levelnum", f[0] || "1", white, "CENTER"), txtC("levellabel", "LEVEL", faint, "CENTER")]),
+          leafR
+        ]);
+        const pct = parseInt(f[2], 10);
+        const pr = frame("progress", "NONE", {}, []); pr.pct = isNaN(pct) ? 45 : pct; pr.fixedW = 220; pr.fillColor = white; pr.trackColor = "rgba(255,255,255,0.25)"; pr.barH = 10;
+        const labels = frame("group", "VERTICAL", { itemSpacing: 4, primaryAxisAlignItems: "CENTER", counterAxisAlignItems: "CENTER" }, [txtC("caption", "NEXT REWARD", faint, "CENTER"), txtC("value", f[1] || "", white, "CENTER")]);
+        return frame("group", "VERTICAL", { itemSpacing: 18, primaryAxisAlignItems: "CENTER", counterAxisAlignItems: "CENTER" }, [emblem, pr, labels]);
+      }
       case "keypad": {
         const key = (label) => grow(frame("key", "HORIZONTAL", { primaryAxisAlignItems: "CENTER", counterAxisAlignItems: "CENTER" }, [txt("key", label, "CENTER")]));
         const rowOf = (a, b, c) => frame("group", "HORIZONTAL", { itemSpacing: 8 }, [key(a), key(b), key(c)]);
@@ -457,8 +479,9 @@
     return node.height;
   }
 
-  function finishScreen(rootNode, name, sheet) {
+  function finishScreen(rootNode, name, sheet, gradient) {
     rootNode.role = "screen";
+    if (gradient && !sheet) rootNode.gradient = ["#3E8FFF", "#7FB5FF"]; // top → bottom blue
     if (sheet) {
       // Bottom sheet: a dimmed scrim with a rounded card anchored to the bottom.
       const content = rootNode.children || [];
@@ -495,14 +518,16 @@
     for (const n of top) {
       if (n.role === "screen") {
         const cf = fields(n.content);
-        const sheet = cf.slice(1).some((x) => /sheet/i.test(x));
-        cur = { name: cf[0] || "Screen", node: n, sheet };
+        const flags = cf.slice(1);
+        const sheet = flags.some((x) => /sheet/i.test(x));
+        const gradient = flags.some((x) => /gradient/i.test(x));
+        cur = { name: cf[0] || "Screen", node: n, sheet, gradient };
         groups.push(cur);
       } else if (cur) cur.node.children.push(n);
       else stray.push(n);
     }
     if (stray.length && groups.length) groups[0].node.children = stray.concat(groups[0].node.children);
-    return groups.map((g) => ({ name: g.name, spec: finishScreen(toSpecNode(g.node), g.name, g.sheet) }));
+    return groups.map((g) => ({ name: g.name, spec: finishScreen(toSpecNode(g.node), g.name, g.sheet, g.gradient) }));
   }
 
   function specFromOutline(text) { const list = specsFromOutline(text); return Array.isArray(list) && list.length ? (list[0].spec || list[0]) : null; }

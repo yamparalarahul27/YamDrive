@@ -121,6 +121,13 @@ a real financial product (e.g. a crypto exchange):
 2-column grid — used by the post-order `Upsell` screen ("People have also
 traded these assets").
 
+| `back Back` | white back nav (chevron + label) for gradient heroes |
+| `progress 45` | progress bar (rounded track + fill, no knob) |
+| `level 8 \| +2% FEE CASHBACK \| 45` | rewards hero: laurel + level, progress, next-reward |
+
+**Gradient heroes:** add `gradient` after a screen name — `screen Level | gradient`
+— for a full-bleed blue gradient background (white status bar + text).
+
 **Bottom sheets:** add `sheet` after a screen name — `screen Leverage | sheet` —
 to render its content as a rounded card anchored to the bottom over a dimmed
 scrim (with a grabber handle). Everything else about the screen works the same.

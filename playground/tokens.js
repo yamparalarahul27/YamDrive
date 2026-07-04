@@ -49,7 +49,9 @@
       longText:   { fontSize: 12, fontWeight: 700, color: "positive" },
       shortText:  { fontSize: 12, fontWeight: 700, color: "negative" },
       buttonTextAlt: { fontSize: 17, fontWeight: 600, color: "onBackground" },
-      key:        { fontSize: 26, fontWeight: 500, color: "onBackground" }
+      key:        { fontSize: 26, fontWeight: 500, color: "onBackground" },
+      levelnum:   { fontSize: 56, fontWeight: 800, color: "onBackground" },
+      levellabel: { fontSize: 13, fontWeight: 700, color: "onBackgroundSecondary" }
     },
     light: {
       background: "#FFFFFF",
@@ -142,7 +144,9 @@
       longText:   { fontSize: 12, fontWeight: 700, color: "positive" },
       shortText:  { fontSize: 12, fontWeight: 700, color: "negative" },
       buttonTextAlt: { fontSize: 14, fontWeight: 500, color: "onBackground" },
-      key:        { fontSize: 24, fontWeight: 400, color: "onBackground" }
+      key:        { fontSize: 24, fontWeight: 400, color: "onBackground" },
+      levelnum:   { fontSize: 56, fontWeight: 800, color: "onBackground" },
+      levellabel: { fontSize: 13, fontWeight: 700, color: "onBackgroundSecondary" }
     },
     light: {
       background: "#FFFFFF",
@@ -392,12 +396,17 @@
         node.cornerRadius = 3;
         setFill("outline");
         break;
+      case "progress":
+        node.height = node.barH || 8;
+        if (!node.fillColor) node.fillColor = pal.primary;
+        if (!node.trackColor) node.trackColor = pal.outline;
+        break;
       default:
         break;
     }
 
     if (isRoot || node.role === "screen") {
-      if (!hasFill) node.fills = [{ type: "SOLID", color: resolveColor(pal, "background") }];
+      if (!hasFill && !node.gradient) node.fills = [{ type: "SOLID", color: resolveColor(pal, "background") }];
       // Apply platform screen margins + spacing, and safe-area insets on top/
       // bottom (skipped for a sheet's scrim, which stays full-bleed).
       const lay = node.layout;

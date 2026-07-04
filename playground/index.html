@@ -174,7 +174,7 @@
     const ALIGN = { MIN: "flex-start", CENTER: "center", MAX: "flex-end", STRETCH: "stretch" };
     const TALIGN = { LEFT: "left", CENTER: "center", RIGHT: "right", JUSTIFIED: "justify" };
     // Roles that keep a fixed platform height (others hug their content).
-    const FIXED_H = { button: 1, buttonSecondary: 1, field: 1, listItem: 1, chip: 1, segmented: 1, appbar: 1, header: 1, tabbar: 1, avatar: 1, actionIcon: 1, iconBtn: 1, tabDot: 1, tabDotActive: 1, chart: 1, slider: 1, switch: 1, tag: 1, pillLong: 1, pillShort: 1, smallbtn: 1, tfmark: 1, key: 1, grabber: 1 };
+    const FIXED_H = { button: 1, buttonSecondary: 1, field: 1, listItem: 1, chip: 1, segmented: 1, appbar: 1, header: 1, tabbar: 1, avatar: 1, actionIcon: 1, iconBtn: 1, tabDot: 1, tabDotActive: 1, chart: 1, slider: 1, switch: 1, tag: 1, pillLong: 1, pillShort: 1, smallbtn: 1, tfmark: 1, key: 1, grabber: 1, progress: 1 };
     // Roles rendered as a fixed square (icon-like); they take their token size.
     const SQUARE = { avatar: 1, actionIcon: 1, iconBtn: 1, tabDot: 1, tabDotActive: 1, ghost: 1, appicon: 1 };
 
@@ -217,6 +217,16 @@
       const dot = document.createElement("div");
       Object.assign(dot.style, { position: "absolute", left: "calc(" + pct + "% - " + (knob / 2) + "px)", top: "50%", transform: "translateY(-50%)", width: knob + "px", height: knob + "px", borderRadius: "50%", background: "#fff", boxShadow: "0 1px 4px rgba(0,0,0,.3)", border: "2px solid " + (node.fillColor || "#0a84ff") });
       el.append(track, fill, dot);
+    }
+
+    function drawProgress(el, node) {
+      el.style.position = "relative";
+      const pct = Math.max(0, Math.min(100, node.pct == null ? 50 : node.pct));
+      const track = document.createElement("div");
+      Object.assign(track.style, { position: "absolute", inset: "0", borderRadius: "999px", background: node.trackColor || "#ddd" });
+      const fill = document.createElement("div");
+      Object.assign(fill.style, { position: "absolute", left: "0", top: "0", bottom: "0", width: pct + "%", borderRadius: "999px", background: node.fillColor || "#0a84ff" });
+      el.append(track, fill);
     }
 
     function drawSwitch(el, node) {
@@ -284,6 +294,7 @@
 
       // FRAME
       s.background = fillColor(node);
+      if (Array.isArray(node.gradient)) s.background = "linear-gradient(180deg, " + node.gradient.join(", ") + ")";
       if (node.cornerRadius) s.borderRadius = node.cornerRadius + "px";
       if (node.role === "sheet") s.borderRadius = "22px 22px 0 0"; // rounded top only
       if (node.stroke) s.border = (node.strokeWeight || 1) + "px solid " + node.stroke;
@@ -292,12 +303,14 @@
       if (node.role === "icon") {
         s.width = node.width + "px"; s.height = node.height + "px";
         el.style.color = node.iconColor || "currentColor";
+        if (node.flip) s.transform = "scaleX(-1)";
         const svg = (typeof ICONS !== "undefined" && ICONS.has(node.icon)) ? ICONS.svg(node.icon) : null;
         if (svg) el.innerHTML = svg;
         else if (node.fallback) { el.textContent = node.fallback; el.style.textAlign = "center"; }
         return el;
       }
       if (node.role === "chart") { if (!absolute) s.height = node.height + "px"; drawChart(el, node); return el; }
+      if (node.role === "progress") { if (!absolute) s.height = node.height + "px"; drawProgress(el, node); return el; }
       if (node.role === "slider") { if (!absolute) s.height = node.height + "px"; drawSlider(el, node); return el; }
       if (node.role === "switch") { s.flex = "0 0 auto"; drawSwitch(el, node); return el; }
 
@@ -343,8 +356,9 @@
       // Match the bezel's screen surface to the root fill (so dark themes don't
       // show a white sliver at the rounded corners).
       const bg = fillColor(spec.root);
+      if (Array.isArray(spec.root.gradient)) screenEl.style.background = "linear-gradient(180deg, " + spec.root.gradient.join(", ") + ")";
       // A translucent scrim (bottom sheet) sits over white; anything else fills directly.
-      screenEl.style.background = (bg === "transparent" || bg.indexOf("rgba") === 0) ? "#fff" : bg;
+      else screenEl.style.background = (bg === "transparent" || bg.indexOf("rgba") === 0) ? "#fff" : bg;
       screenEl.innerHTML = "";
 
       const canvas = document.createElement("div");
@@ -367,7 +381,8 @@
       // Faux status bar in the top safe area (time + signal/wifi/battery).
       if (spec.safeTop && !landscape) {
         const isSheet = spec.root && spec.root.sheet;
-        const color = (spec.theme === "dark" || isSheet) ? "#ffffff" : "#0b0b0c";
+        const onGradient = spec.root && Array.isArray(spec.root.gradient);
+        const color = (spec.theme === "dark" || isSheet || onGradient) ? "#ffffff" : "#0b0b0c";
         const sb = document.createElement("div");
         Object.assign(sb.style, {
           position: "absolute", top: "0", left: "0", right: "0",
@@ -537,6 +552,10 @@
       "    cardbig Solana | SOL | $71B | +6.8%",
       "    cardbig Polymarket | POLY | $2.19B | +3.1% | blue",
       "  buttons Continue*",
+      "",
+      "screen Level | gradient",
+      "  back Back",
+      "  level 8 | +2% FEE CASHBACK | 45",
       "",
       "screen Earn",
       "  header ‹ | Earn | ⌕",
