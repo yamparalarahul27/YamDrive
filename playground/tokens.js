@@ -330,6 +330,10 @@
         node.cornerRadius = 2;
         setFill("primary");
         break;
+      case "icon":
+        node.width = node.height = node.iconSize || 20;
+        node.iconColor = resolveColor(pal, node.colorRole || "onBackground");
+        break;
       default:
         break;
     }

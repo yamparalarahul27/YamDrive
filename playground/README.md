@@ -119,6 +119,22 @@ positive color (green), `-` in the negative color (red), anything else neutral.
 Action glyphs are inferred for `buy/sell/send/receive/swap/more`, else the first
 letter. The default Describe example is a full crypto portfolio screen.
 
+## Icons & fonts
+
+- **Icons** — [Phosphor](https://phosphoricons.com) (MIT), inlined as SVG in
+  [`icons.js`](./icons.js). Action buttons, tab bars, headers, and the bookmark
+  resolve to real vector icons by keyword (`buy`→plus, `wallet`→wallet, `‹`→back,
+  etc.); anything unresolved falls back to the character you typed.
+- **Fonts** — Inter and Geist Sans, embedded as base64 `@font-face` in
+  [`fonts.css`](./fonts.css) (OFL) so they render identically everywhere,
+  offline. The toolbar **Font** selector switches the mockups between **Inter**,
+  **Geist**, and **System** (the platform SF/Roboto stacks). The playground UI
+  itself is set in Geist.
+
+Both are bundled build outputs (no runtime dependency, no network). To
+regenerate after changing the icon list, re-run the small extractor that reads
+`@phosphor-icons/core` and `@fontsource/*`.
+
 ## Design tokens ([`tokens.js`](./tokens.js))
 
 Starting guidelines encoded once as tables:

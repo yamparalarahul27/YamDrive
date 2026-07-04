@@ -4,6 +4,7 @@
   <meta charset="utf-8" />
   <meta name="viewport" content="width=device-width, initial-scale=1" />
   <title>Mobile Design Playground</title>
+  <link rel="stylesheet" href="fonts.css" />
   <style>
     :root {
       --bg: #f5f5f7;
@@ -14,7 +15,7 @@
       --accent: #0a84ff;
       --stage: #ececed;
       --mono: ui-monospace, SFMono-Regular, "SF Mono", Menlo, monospace;
-      --sans: -apple-system, BlinkMacSystemFont, "Segoe UI", Roboto, sans-serif;
+      --sans: 'Geist', -apple-system, BlinkMacSystemFont, "Segoe UI", Roboto, sans-serif;
     }
     @media (prefers-color-scheme: dark) {
       :root {
@@ -44,6 +45,7 @@
     button:active { transform: translateY(1px); }
     .toggle { font-size: 12px; color: var(--muted); display: inline-flex; align-items: center; gap: 6px; cursor: pointer; user-select: none; }
     .toggle input { accent-color: var(--accent); }
+    .toggle select { font: inherit; font-size: 12px; margin-left: 4px; border: 1px solid var(--line); border-radius: 6px; background: var(--bg); color: var(--ink); padding: 3px 4px; }
     .tabs { display: flex; gap: 4px; padding: 8px 18px 0; }
     .tab { border: none; border-bottom: 2px solid transparent; background: none; border-radius: 0; padding: 6px 4px; color: var(--muted); font-size: 12px; font-weight: 600; }
     .tab.active { color: var(--ink); border-bottom-color: var(--accent); }
@@ -102,6 +104,13 @@
       <label class="toggle"><input type="checkbox" id="guidelines" checked /> Apply Apple / Material guidelines</label>
       <label class="toggle"><input type="checkbox" id="landscape" /> Landscape</label>
       <label class="toggle"><input type="checkbox" id="dark" /> Dark</label>
+      <label class="toggle">Font
+        <select id="font">
+          <option value="Inter" selected>Inter</option>
+          <option value="Geist">Geist</option>
+          <option value="System">System (SF/Roboto)</option>
+        </select>
+      </label>
     </div>
     <textarea id="outline" spellcheck="false" autocomplete="off" placeholder="screen Sign in&#10;  title Welcome back&#10;  field Email address&#10;  button Sign in"></textarea>
     <textarea id="input" spellcheck="false" autocomplete="off" hidden></textarea>
@@ -122,6 +131,7 @@
     </div>
   </section>
 
+  <script src="icons.js"></script>
   <script src="tokens.js"></script>
   <script src="generator.js"></script>
   <script>
@@ -277,6 +287,14 @@
       if (node.stroke) s.border = (node.strokeWeight || 1) + "px solid " + node.stroke;
 
       // Custom-drawn components.
+      if (node.role === "icon") {
+        s.width = node.width + "px"; s.height = node.height + "px";
+        el.style.color = node.iconColor || "currentColor";
+        const svg = (typeof ICONS !== "undefined" && ICONS.has(node.icon)) ? ICONS.svg(node.icon) : null;
+        if (svg) el.innerHTML = svg;
+        else if (node.fallback) { el.textContent = node.fallback; el.style.textAlign = "center"; }
+        return el;
+      }
       if (node.role === "chart") { if (!absolute) s.height = node.height + "px"; drawChart(el, node); return el; }
       if (node.role === "slider") { if (!absolute) s.height = node.height + "px"; drawSlider(el, node); return el; }
       if (node.role === "switch") { s.flex = "0 0 auto"; drawSwitch(el, node); return el; }
@@ -309,7 +327,8 @@
       return el;
     }
 
-    function paint(screenEl, spec, targetW, landscape) {
+    const FONT_STACK = { Inter: "'Inter', sans-serif", Geist: "'Geist', sans-serif" };
+    function paint(screenEl, spec, targetW, landscape, fontChoice) {
       const base = spec.device || { width: spec.root.width, height: spec.root.height };
       // Landscape swaps the viewport; the content reflows into the wider, shorter
       // screen (auto-layout stretches/hugs, so it adapts rather than rotating).
@@ -328,7 +347,10 @@
       canvas.style.width = dev.width + "px";
       canvas.style.height = dev.height + "px";
       canvas.style.transform = "scale(" + scale + ")";
-      if (spec.fontFamily) canvas.style.fontFamily = spec.fontFamily;
+      // Brand font override (Inter/Geist) or the platform's system stack.
+      const brand = FONT_STACK[fontChoice];
+      if (brand) canvas.style.fontFamily = brand;
+      else if (spec.fontFamily) canvas.style.fontFamily = spec.fontFamily;
 
       // Root frame fills the canvas.
       const root = renderNode(spec.root, false);
@@ -484,10 +506,11 @@
       const theme = document.getElementById("dark").checked ? "dark" : "light";
       try {
         const tw = land ? LANDSCAPE_W : IOS_W;
+        const fontChoice = document.getElementById("font").value;
         const iosSpec = useGuidelines ? applyPlatformDefaults(spec, "ios", theme) : spec;
         const androidSpec = useGuidelines ? applyPlatformDefaults(spec, "android", theme) : spec;
-        paint(document.getElementById("iosScreen"), iosSpec, tw, land);
-        paint(document.getElementById("androidScreen"), androidSpec, tw, land);
+        paint(document.getElementById("iosScreen"), iosSpec, tw, land, fontChoice);
+        paint(document.getElementById("androidScreen"), androidSpec, tw, land, fontChoice);
         document.querySelector(".iphone").classList.toggle("land", land);
         document.querySelector(".android").classList.toggle("land", land);
         const orient = land ? " · landscape" : "";
@@ -540,6 +563,7 @@
     document.getElementById("guidelines").addEventListener("change", render);
     document.getElementById("landscape").addEventListener("change", () => paintActive());
     document.getElementById("dark").addEventListener("change", () => paintActive());
+    document.getElementById("font").addEventListener("change", () => paintActive());
     btnExample.addEventListener("click", () => {
       if (mode === "describe") outline.value = OUTLINE_EXAMPLE;
       else input.value = JSON.stringify(EXAMPLE, null, 2);

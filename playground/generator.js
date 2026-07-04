@@ -64,8 +64,15 @@
   function changeRole(s) { const t = String(s || "").trim(); if (t[0] === "-" || /^[▼↓]/.test(t)) return "negative"; if (t[0] === "+" || /^[▲↑]/.test(t)) return "positive"; return "neutral"; }
   function fields(s) { return String(s || "").split("|").map((x) => x.trim()); }
 
+  // A Phosphor icon node. `name` is a logical icon/glyph the renderer resolves
+  // via icons.js; `fallback` is drawn if it doesn't resolve (or icons.js absent).
+  function iconNode(name, size, colorRole, fallback) {
+    const n = frame("icon", "NONE", {}, []);
+    n.icon = name; n.iconSize = size || 20; n.colorRole = colorRole || "onBackground"; n.fallback = fallback == null ? "" : fallback;
+    return n;
+  }
   function avatar(label) { return frame("avatar", "HORIZONTAL", { primaryAxisAlignItems: "CENTER", counterAxisAlignItems: "CENTER" }, [txt("avatarText", initials(label), "CENTER")]); }
-  function iconBtn(g) { return frame("iconBtn", "HORIZONTAL", { primaryAxisAlignItems: "CENTER", counterAxisAlignItems: "CENTER" }, [txt("label", g || "•", "CENTER")]); }
+  function iconBtn(g) { return frame("iconBtn", "HORIZONTAL", { primaryAxisAlignItems: "CENTER", counterAxisAlignItems: "CENTER" }, [iconNode(g, 20, "onBackground", g)]); }
   function ghost() { return frame("ghost", "NONE", {}, []); }
   function smallBtn(label) { return frame("smallbtn", "HORIZONTAL", { paddingLeft: 16, paddingRight: 16, primaryAxisAlignItems: "CENTER", counterAxisAlignItems: "CENTER" }, [txt("buttonText", label || "", "CENTER")]); }
 
@@ -107,7 +114,7 @@
         ]);
       case "actions": {
         const cols = f.filter(Boolean).map((a) => frame("group", "VERTICAL", { itemSpacing: 8, primaryAxisAlignItems: "CENTER", counterAxisAlignItems: "CENTER" }, [
-          frame("actionIcon", "HORIZONTAL", { primaryAxisAlignItems: "CENTER", counterAxisAlignItems: "CENTER" }, [txt("actionGlyph", glyphFor(a), "CENTER")]),
+          frame("actionIcon", "HORIZONTAL", { primaryAxisAlignItems: "CENTER", counterAxisAlignItems: "CENTER" }, [iconNode(a, 26, "onPrimary", glyphFor(a))]),
           txt("caption", a, "CENTER")
         ]));
         return frame("group", "HORIZONTAL", { primaryAxisAlignItems: "SPACE_BETWEEN", counterAxisAlignItems: "MIN" }, cols);
@@ -146,7 +153,7 @@
       }
       case "tabbar": {
         const tabs = f.filter(Boolean).map((tb, i) => frame("group", "VERTICAL", { itemSpacing: 5, primaryAxisAlignItems: "CENTER", counterAxisAlignItems: "CENTER" }, [
-          frame(i === 0 ? "tabDotActive" : "tabDot", "HORIZONTAL", {}, []), txt(i === 0 ? "tabLabelActive" : "caption", tb, "CENTER")
+          iconNode(tb, 24, i === 0 ? "primary" : "onBackgroundSecondary", "•"), txt(i === 0 ? "tabLabelActive" : "caption", tb, "CENTER")
         ]));
         const bar = frame("tabbar", "HORIZONTAL", { paddingLeft: 18, paddingRight: 18, primaryAxisAlignItems: "SPACE_BETWEEN", counterAxisAlignItems: "CENTER" }, tabs);
         return frame("group", "VERTICAL", { itemSpacing: 0, counterAxisAlignItems: "STRETCH" }, [frame("divider", "NONE", {}, []), bar]);
@@ -168,7 +175,7 @@
         const idRow = frame("group", "HORIZONTAL", { itemSpacing: 6, counterAxisAlignItems: "CENTER" }, [txt("value", f[0] || ""), txt("symbol", f[1] || "")]);
         const priceRow = frame("group", "HORIZONTAL", { primaryAxisAlignItems: "SPACE_BETWEEN", counterAxisAlignItems: "CENTER" }, [
           frame("group", "HORIZONTAL", { itemSpacing: 10, counterAxisAlignItems: "CENTER" }, [txt("amount", f[2] || ""), txt(changeRole(f[3]), f[3] || "")]),
-          txt("navTitle", "☆", "RIGHT")
+          iconNode("bookmark", 24, "onBackgroundSecondary", "☆")
         ]);
         return frame("group", "VERTICAL", { itemSpacing: 10, counterAxisAlignItems: "MIN" }, [avatar(f[0]), idRow, priceRow]);
       }
@@ -302,6 +309,7 @@
     if (node.role === "spacer") { node.height = node.spacerSize || 16; return node.height; }
     if (node.role === "divider") { node.height = 1; return node.height; }
     if (node.role === "tfmark") { node.width = 16; node.height = 3; return node.height; }
+    if (node.role === "icon") { node.width = node.height = node.iconSize || 20; return node.height; }
     const size = COMPONENT_SIZE[node.role];
     if (size != null) { node.width = size; layoutChildren(node, x, size); node.height = size; return node.height; }
     const content = layoutChildren(node, x, width);
