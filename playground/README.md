@@ -99,6 +99,12 @@ a real financial product (e.g. a crypto exchange):
 | `chart +0.23% \| bleed line` | full-bleed, line-only chart (options: `bleed`, `line`) |
 | `quote NVDA \| Nasdaq \| $150.19 \| +0.34 (+0.23%)` | asset header: logo, ticker/exchange, big price, change, bookmark |
 | `timeframe 1D \| 1W* \| 1M \| 3M \| 1Y \| All` | timeframe tabs; `*` marks the selected one (underlined) |
+| `tabs Markets* \| Orders \| History \| PnL` | underline text tabs (alias of `timeframe`) |
+| `account $400.00 \| +126% Today \| $380.00 Available` | balance card with hide-eye + change · available |
+| `buttons Withdraw \| Deposit*` | button row; `*` = primary, others secondary |
+| `statbar 24h Vol:$1.72B \| OI:$1.46B \| Funding:0.0072%` | row of stat pills |
+| `position ETH \| LONG 25x \| $499 \| +12.3% \| entry \| market \| liq` | perps position card: logo, green/red direction pill, value, PnL, entry/market/liq |
+| `posdetail $205.12 \| Long 2x \| +$2.01 (4%) \| $587.89 \| tp \| sl` | position manage card: size + pill, PnL, margin, take-profit, stop-loss |
 | `orderform BTC \| INR` | Buy/Sell tabs + amount + slider + total + button |
 | `slider 25` | progress/percentage slider at 25% |
 | `switch UPI \| on` | labeled row with an on/off toggle |

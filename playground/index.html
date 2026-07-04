@@ -174,7 +174,7 @@
     const ALIGN = { MIN: "flex-start", CENTER: "center", MAX: "flex-end", STRETCH: "stretch" };
     const TALIGN = { LEFT: "left", CENTER: "center", RIGHT: "right", JUSTIFIED: "justify" };
     // Roles that keep a fixed platform height (others hug their content).
-    const FIXED_H = { button: 1, field: 1, listItem: 1, chip: 1, segmented: 1, appbar: 1, header: 1, tabbar: 1, avatar: 1, actionIcon: 1, iconBtn: 1, tabDot: 1, tabDotActive: 1, chart: 1, slider: 1, switch: 1, tag: 1, smallbtn: 1, tfmark: 1 };
+    const FIXED_H = { button: 1, buttonSecondary: 1, field: 1, listItem: 1, chip: 1, segmented: 1, appbar: 1, header: 1, tabbar: 1, avatar: 1, actionIcon: 1, iconBtn: 1, tabDot: 1, tabDotActive: 1, chart: 1, slider: 1, switch: 1, tag: 1, pillLong: 1, pillShort: 1, smallbtn: 1, tfmark: 1 };
     // Roles rendered as a fixed square (icon-like); they take their token size.
     const SQUARE = { avatar: 1, actionIcon: 1, iconBtn: 1, tabDot: 1, tabDotActive: 1, ghost: 1 };
 
@@ -403,9 +403,21 @@
       "  chart +0.23% | bleed line",
       "  quote NVDA | Nasdaq | $150.19 | +0.34 (+0.23%)",
       "  timeframe 1D | 1W* | 1M | 3M | 1Y | All",
-      "  row",
-      "    [ Sell ]",
-      "    [ Buy ]",
+      "  statbar 24h Vol:$1.72B | OI:$1.46B | Funding:0.0072%",
+      "  posdetail $205.12 | Long 2x | +$2.01 (4.0%) | $587.89 | 2,187.11 | 3,192.90",
+      "  stat Liquidation Price | $1,240.00",
+      "  buttons Add* | Close*",
+      "",
+      "screen Perps",
+      "  appbar Perps | info | user",
+      "  account $400.00 | +126% ($38.11) Today | $380.00 Available",
+      "  buttons Withdraw | Deposit*",
+      "  tabs Markets* | Orders | History | PnL",
+      "  position ETH | LONG 25x | $499.00 | +12.32% ($92.99) | 3,382.01 | 3,412.02 | 3,311.11",
+      "  position BTC | SHORT 5x | $240.00 | +1.91% ($22.73) | 72,819.62 | 74,188.11 | 69,910.83",
+      "  chips By Volume ▾",
+      "  asset BTC | $3.1B · 40x | $93,241.81 | +0.22%",
+      "  asset ETH | $1.7B · 25x | $3,141.92 | +3.85%",
       "",
       "screen Buy",
       "  header ‹ | Buy Bitcoin | ⓘ",

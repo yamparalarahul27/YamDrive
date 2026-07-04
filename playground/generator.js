@@ -30,14 +30,16 @@
   const COMPOSITES = {
     appbar: 1, header: 1, balance: 1, actions: 1, segmented: 1, chips: 1, chip: 1, asset: 1,
     tabbar: 1, avatar: 1, divider: 1, spacer: 1, chart: 1, stats: 1, stat: 1, slider: 1,
-    switch: 1, banner: 1, tag: 1, trader: 1, orderform: 1, iconbtn: 1, quote: 1, timeframe: 1
+    switch: 1, banner: 1, tag: 1, trader: 1, orderform: 1, iconbtn: 1, quote: 1, timeframe: 1,
+    account: 1, buttons: 1, tabs: 1, statbar: 1, position: 1, posdetail: 1
   };
 
   const TEXT_HEIGHT = {
     display: 44, title: 42, heading: 32, subtitle: 26, body: 24, label: 22, caption: 18,
     amount: 44, value: 24, symbol: 20, positive: 22, negative: 22, neutral: 22,
     placeholder: 24, buttonText: 24, avatarText: 22, actionGlyph: 26, tabLabelActive: 16,
-    navTitle: 24, tagText: 18, statValue: 24, tfActive: 18, tfIdle: 18
+    navTitle: 24, tagText: 18, statValue: 24, tfActive: 18, tfIdle: 18,
+    longText: 18, shortText: 18, buttonTextAlt: 24
   };
   const COMPONENT_H = {
     button: 52, field: 52, listItem: 44, chip: 34, segmented: 40, appbar: 56, header: 56,
@@ -75,6 +77,15 @@
   function iconBtn(g) { return frame("iconBtn", "HORIZONTAL", { primaryAxisAlignItems: "CENTER", counterAxisAlignItems: "CENTER" }, [iconNode(g, 20, "onBackground", g)]); }
   function ghost() { return frame("ghost", "NONE", {}, []); }
   function smallBtn(label) { return frame("smallbtn", "HORIZONTAL", { paddingLeft: 16, paddingRight: 16, primaryAxisAlignItems: "CENTER", counterAxisAlignItems: "CENTER" }, [txt("buttonText", label || "", "CENTER")]); }
+  // A LONG/SHORT · leverage pill, colored green/red by direction.
+  function pill(dirField) {
+    const parts = String(dirField || "").trim().split(/\s+/);
+    const dir = (parts[0] || "LONG").toUpperCase();
+    const lev = parts.slice(1).join(" ");
+    const isShort = /short/i.test(dir);
+    const label = dir + (lev ? " · " + lev : "");
+    return frame(isShort ? "pillShort" : "pillLong", "HORIZONTAL", { paddingLeft: 10, paddingRight: 10, primaryAxisAlignItems: "CENTER", counterAxisAlignItems: "CENTER" }, [txt(isShort ? "shortText" : "longText", label, "CENTER")]);
+  }
 
   // deterministic price series for a chart (no Math.random / Date)
   function chartPoints(seed, up) {
@@ -222,6 +233,52 @@
           buildComposite("stat", "Available | 0.00 " + quote),
           frame("button", "HORIZONTAL", { primaryAxisAlignItems: "CENTER", counterAxisAlignItems: "CENTER" }, [txt("buttonText", "Buy " + asset, "CENTER")])
         ]);
+      }
+      case "tabs":
+        return buildComposite("timeframe", content);
+      case "account": {
+        // amount | change...Today | available  (balance card with hide-eye)
+        const amountRow = frame("group", "HORIZONTAL", { primaryAxisAlignItems: "SPACE_BETWEEN", counterAxisAlignItems: "CENTER" }, [txt("amount", f[0] || ""), iconNode("eye-slash", 22, "onBackgroundSecondary", "◡")]);
+        const subRow = frame("group", "HORIZONTAL", { itemSpacing: 8, counterAxisAlignItems: "CENTER" }, [txt(changeRole(f[1]), f[1] || ""), txt("caption", f[2] ? "· " + f[2] : "")]);
+        return frame("card", "VERTICAL", { paddingTop: 16, paddingBottom: 16, paddingLeft: 16, paddingRight: 16, itemSpacing: 8, counterAxisAlignItems: "STRETCH" }, [amountRow, subRow]);
+      }
+      case "buttons": {
+        const btns = f.filter(Boolean).map((b) => {
+          const primary = /\*$/.test(b);
+          const label = b.replace(/\*$/, "").trim();
+          return grow(frame(primary ? "button" : "buttonSecondary", "HORIZONTAL", { primaryAxisAlignItems: "CENTER", counterAxisAlignItems: "CENTER" }, [txt(primary ? "buttonText" : "buttonTextAlt", label, "CENTER")]));
+        });
+        return frame("group", "HORIZONTAL", { itemSpacing: 12 }, btns);
+      }
+      case "statbar": {
+        const chips = f.filter(Boolean).map((it) => {
+          const c = it.indexOf(":"); const label = c >= 0 ? it.slice(0, c).trim() : it; const val = c >= 0 ? it.slice(c + 1).trim() : "";
+          return frame("chip", "HORIZONTAL", { paddingLeft: 12, paddingRight: 12, itemSpacing: 6, primaryAxisAlignItems: "CENTER", counterAxisAlignItems: "CENTER" }, [txt("caption", label), txt("value", val)]);
+        });
+        return frame("group", "HORIZONTAL", { itemSpacing: 8, counterAxisAlignItems: "CENTER" }, chips);
+      }
+      case "position": {
+        // symbol | LONG 25x | value | pnl | entry | market | liq
+        const left = frame("group", "HORIZONTAL", { itemSpacing: 12, counterAxisAlignItems: "CENTER" }, [
+          avatar(f[0]), frame("group", "VERTICAL", { itemSpacing: 4, counterAxisAlignItems: "MIN" }, [txt("value", f[0] || ""), pill(f[1])])
+        ]);
+        const right = frame("group", "VERTICAL", { itemSpacing: 4, counterAxisAlignItems: "MAX" }, [txt("value", f[2] || "", "RIGHT"), txt(changeRole(f[3]), f[3] || "", "RIGHT")]);
+        const head = frame("group", "HORIZONTAL", { primaryAxisAlignItems: "SPACE_BETWEEN", counterAxisAlignItems: "MIN" }, [left, right]);
+        const stats = buildComposite("stats", "Entry:" + (f[4] || "") + " | Market:" + (f[5] || "") + " | Liq.:" + (f[6] || ""));
+        return frame("card", "VERTICAL", { paddingTop: 16, paddingBottom: 16, paddingLeft: 16, paddingRight: 16, itemSpacing: 16, counterAxisAlignItems: "STRETCH" }, [head, stats]);
+      }
+      case "posdetail": {
+        // size | dir lev | pnl | margin | tp | sl
+        const col = (label, valNode, iconName) => {
+          const lbl = iconName
+            ? frame("group", "HORIZONTAL", { itemSpacing: 5, counterAxisAlignItems: "CENTER" }, [txt("caption", label), iconNode(iconName, 14, "onBackgroundSecondary", "")])
+            : txt("caption", label);
+          return grow(frame("group", "VERTICAL", { itemSpacing: 3, counterAxisAlignItems: "MIN" }, [lbl, valNode]));
+        };
+        const sizeRow = frame("group", "HORIZONTAL", { itemSpacing: 12, counterAxisAlignItems: "CENTER" }, [txt("amount", f[0] || ""), pill(f[1])]);
+        const row1 = frame("group", "HORIZONTAL", { itemSpacing: 16 }, [col("PnL", txt(changeRole(f[2]), f[2] || "")), col("Margin (Isolated)", txt("value", f[3] || ""), "caret-right")]);
+        const row2 = frame("group", "HORIZONTAL", { itemSpacing: 16 }, [col("Take Profit", txt("value", f[4] || ""), "pencil"), col("Stop Loss", txt("value", f[5] || ""), "pencil")]);
+        return frame("card", "VERTICAL", { paddingTop: 16, paddingBottom: 16, paddingLeft: 16, paddingRight: 16, itemSpacing: 16, counterAxisAlignItems: "STRETCH" }, [txt("caption", "Size"), sizeRow, row1, row2]);
       }
       default: return null;
     }

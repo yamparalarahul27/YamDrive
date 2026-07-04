@@ -45,7 +45,10 @@
       navTitle:   { fontSize: 17, fontWeight: 600, color: "onBackground" },
       tagText:    { fontSize: 12, fontWeight: 600, color: "primary" },
       tfActive:   { fontSize: 13, fontWeight: 700, color: "onBackground" },
-      tfIdle:     { fontSize: 13, fontWeight: 500, color: "onBackgroundSecondary" }
+      tfIdle:     { fontSize: 13, fontWeight: 500, color: "onBackgroundSecondary" },
+      longText:   { fontSize: 12, fontWeight: 700, color: "positive" },
+      shortText:  { fontSize: 12, fontWeight: 700, color: "negative" },
+      buttonTextAlt: { fontSize: 17, fontWeight: 600, color: "onBackground" }
     },
     light: {
       background: "#FFFFFF",
@@ -59,7 +62,9 @@
       positive: "#34C759",
       negative: "#FF3B30",
       segmentSel: "#FFFFFF",
-      infoBg: "#EAF3FF"
+      infoBg: "#EAF3FF",
+      posBg: "#E4F7EA",
+      negBg: "#FEE9E7"
     },
     dark: {
       background: "#000000",
@@ -73,7 +78,9 @@
       positive: "#30D158",
       negative: "#FF453B",
       segmentSel: "#2C2C2E",
-      infoBg: "#0E2A47"
+      infoBg: "#0E2A47",
+      posBg: "#0E2A17",
+      negBg: "#2A1210"
     },
     // Component metrics (points). 8pt spacing grid; 44pt minimum tap target.
     metrics: {
@@ -129,7 +136,10 @@
       navTitle:   { fontSize: 20, fontWeight: 500, color: "onBackground" },
       tagText:    { fontSize: 12, fontWeight: 600, color: "primary" },
       tfActive:   { fontSize: 13, fontWeight: 700, color: "onBackground" },
-      tfIdle:     { fontSize: 13, fontWeight: 500, color: "onBackgroundSecondary" }
+      tfIdle:     { fontSize: 13, fontWeight: 500, color: "onBackgroundSecondary" },
+      longText:   { fontSize: 12, fontWeight: 700, color: "positive" },
+      shortText:  { fontSize: 12, fontWeight: 700, color: "negative" },
+      buttonTextAlt: { fontSize: 14, fontWeight: 500, color: "onBackground" }
     },
     light: {
       background: "#FFFFFF",
@@ -143,7 +153,9 @@
       positive: "#2E7D32",
       negative: "#B3261E",
       segmentSel: "#E8DEF8",
-      infoBg: "#EADDFF"
+      infoBg: "#EADDFF",
+      posBg: "#DDF3E1",
+      negBg: "#F9DEDC"
     },
     dark: {
       background: "#141218",
@@ -157,7 +169,9 @@
       positive: "#7FD98B",
       negative: "#F2B8B5",
       segmentSel: "#4A4458",
-      infoBg: "#332D41"
+      infoBg: "#332D41",
+      posBg: "#123322",
+      negBg: "#3A2323"
     },
     // Material metrics (dp). 4/8dp grid; 48dp minimum touch target; full-radius buttons.
     metrics: {
@@ -221,6 +235,21 @@
         node.height = t.metrics.button.height;
         node.cornerRadius = t.metrics.button.radius;
         setFill("primary");
+        break;
+      case "buttonSecondary":
+        node.height = t.metrics.button.height;
+        node.cornerRadius = t.metrics.button.radius;
+        setFill("surfaceVariant");
+        break;
+      case "pillLong":
+        node.height = t.metrics.tag.height;
+        node.cornerRadius = t.metrics.tag.radius;
+        setFill("posBg");
+        break;
+      case "pillShort":
+        node.height = t.metrics.tag.height;
+        node.cornerRadius = t.metrics.tag.radius;
+        setFill("negBg");
         break;
       case "field":
         node.height = t.metrics.field.height;
