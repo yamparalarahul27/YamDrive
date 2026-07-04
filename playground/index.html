@@ -62,9 +62,9 @@
     /* --- Stage --- */
     .stage { background: var(--stage); overflow: auto; padding: 28px 40px 40px; display: flex; flex-direction: column; align-items: center; gap: 22px; }
     .devices { display: flex; gap: 56px; justify-content: center; align-items: flex-start; flex-wrap: wrap; }
-    .screenbar { display: flex; gap: 8px; flex-wrap: wrap; justify-content: center; max-width: 860px; position: sticky; top: 0; z-index: 5; }
+    .screenbar { display: flex; gap: 8px; flex-wrap: nowrap; overflow-x: auto; overflow-y: hidden; justify-content: flex-start; align-self: stretch; padding-bottom: 4px; position: sticky; top: 0; z-index: 5; scrollbar-width: thin; }
     .screenbar:empty { display: none; }
-    .schip { font-size: 12px; font-weight: 600; padding: 6px 13px; border-radius: 999px; border: 1px solid var(--line); background: var(--panel); color: var(--muted); cursor: pointer; }
+    .schip { flex: 0 0 auto; white-space: nowrap; font-size: 12px; font-weight: 600; padding: 6px 13px; border-radius: 999px; border: 1px solid var(--line); background: var(--panel); color: var(--muted); cursor: pointer; }
     .schip.active { background: var(--accent); border-color: var(--accent); color: #fff; }
     .device { display: flex; flex-direction: column; align-items: center; gap: 14px; }
     .device .label { font-size: 12px; color: var(--muted); font-weight: 550; }
@@ -491,6 +491,15 @@
       "  buttons Set Limit Price*",
       "  chips -1% | -2% | -5% | ↕ %",
       "  keypad",
+      "",
+      "screen Receipt | sheet",
+      "  receipthead Kalshi | Sell $99.50 of Kalshi | Short",
+      "  stat Based on | Valuation",
+      "  stat Order type | Close Short",
+      "  stat Contracts | 199",
+      "  stat Price per contract | $0.50",
+      "  stat Est. P/L | +$0.00 (+0%)",
+      "  sharebtn Share",
       "",
       "screen Earn",
       "  header ‹ | Earn | ⌕",

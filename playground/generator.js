@@ -32,7 +32,7 @@
     tabbar: 1, avatar: 1, divider: 1, spacer: 1, chart: 1, stats: 1, stat: 1, slider: 1,
     switch: 1, banner: 1, tag: 1, trader: 1, orderform: 1, iconbtn: 1, quote: 1, timeframe: 1,
     account: 1, buttons: 1, tabs: 1, statbar: 1, position: 1, posdetail: 1, tile: 1, dapp: 1,
-    keypad: 1, bignum: 1
+    keypad: 1, bignum: 1, receipthead: 1, sharebtn: 1
   };
 
   const TEXT_HEIGHT = {
@@ -244,6 +244,15 @@
           txt("amount", f[0] || "", "CENTER"), txt("caption", f[1] || "", "CENTER")
         ]);
       }
+      case "receipthead": {
+        // logo | title | tag  — centered trade-receipt header
+        const logo = frame("appicon", "HORIZONTAL", { primaryAxisAlignItems: "CENTER", counterAxisAlignItems: "CENTER" }, [txt("avatarText", initials(f[0]), "CENTER")]);
+        const kids = [logo, txt("title", f[1] || "", "CENTER")];
+        if (f[2]) kids.push(frame("pillShort", "HORIZONTAL", { paddingLeft: 10, paddingRight: 10, primaryAxisAlignItems: "CENTER", counterAxisAlignItems: "CENTER" }, [txt("shortText", f[2], "CENTER")]));
+        return frame("group", "VERTICAL", { itemSpacing: 10, primaryAxisAlignItems: "CENTER", counterAxisAlignItems: "CENTER" }, kids);
+      }
+      case "sharebtn":
+        return frame("button", "HORIZONTAL", { itemSpacing: 8, primaryAxisAlignItems: "CENTER", counterAxisAlignItems: "CENTER" }, [txt("buttonText", f[0] || "Share", "CENTER"), iconNode("export", 18, "onPrimary", "⬆")]);
       case "keypad": {
         const key = (label) => grow(frame("key", "HORIZONTAL", { primaryAxisAlignItems: "CENTER", counterAxisAlignItems: "CENTER" }, [txt("key", label, "CENTER")]));
         const rowOf = (a, b, c) => frame("group", "HORIZONTAL", { itemSpacing: 8 }, [key(a), key(b), key(c)]);
