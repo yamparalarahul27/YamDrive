@@ -58,7 +58,31 @@ Markdown-ish shortcuts at line start also work:
 | `- Item` | list item |
 
 Containers (`screen`, `card`, `row`, `column`, `section`, `group`) hug their
-content; `button`/`field`/`listItem` take the platform's component height.
+content; `button`/`field`/`listItem` take the platform's component height. A
+`row`'s children grow to share its width equally.
+
+## Composite components (pipe-delimited)
+
+Pack a whole subtree into one line with `|`-separated fields. Enough to lay out
+a real financial product (e.g. a crypto exchange):
+
+| Write | Renders |
+| --- | --- |
+| `appbar Portfolio \| ⋯` | top bar: title + trailing icon buttons |
+| `balance Total \| $12,405.32 \| +5.2%` | hero balance; the change is colored by its sign |
+| `actions Buy \| Sell \| Send \| Receive` | row of circular action buttons with glyphs |
+| `segmented Overview \| Assets \| Activity` | segmented control (first selected) |
+| `chips All \| Gainers \| Losers` | row of filter chips |
+| `asset BTC \| Bitcoin \| $64,230 \| +2.4%` | list row: avatar, name/symbol, price, colored change |
+| `tabbar Home \| Markets \| Trade \| Wallet` | bottom nav with divider (first selected) |
+| `avatar BTC` | circular initials badge |
+| `divider` | hairline rule |
+| `spacer 24` | fixed vertical gap of 24 |
+
+**Change coloring:** a value starting with `+` renders in the platform's
+positive color (green), `-` in the negative color (red), anything else neutral.
+Action glyphs are inferred for `buy/sell/send/receive/swap/more`, else the first
+letter. The default Describe example is a full crypto portfolio screen.
 
 ## Design tokens ([`tokens.js`](./tokens.js))
 

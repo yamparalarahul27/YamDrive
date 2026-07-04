@@ -32,7 +32,16 @@
       label:      { fontSize: 15, fontWeight: 500, color: "onBackground" },
       caption:    { fontSize: 12, fontWeight: 400, color: "onBackgroundSecondary" },
       buttonText: { fontSize: 17, fontWeight: 600, color: "onPrimary" },
-      placeholder:{ fontSize: 17, fontWeight: 400, color: "placeholder" }
+      placeholder:{ fontSize: 17, fontWeight: 400, color: "placeholder" },
+      amount:     { fontSize: 40, fontWeight: 700, color: "onBackground" }, // hero balance
+      value:      { fontSize: 17, fontWeight: 600, color: "onBackground" }, // list trailing value
+      symbol:     { fontSize: 13, fontWeight: 400, color: "onBackgroundSecondary" },
+      positive:   { fontSize: 15, fontWeight: 600, color: "positive" },
+      negative:   { fontSize: 15, fontWeight: 600, color: "negative" },
+      neutral:    { fontSize: 15, fontWeight: 600, color: "onBackgroundSecondary" },
+      avatarText: { fontSize: 15, fontWeight: 700, color: "onPrimary" },
+      actionGlyph:{ fontSize: 22, fontWeight: 600, color: "onPrimary" },
+      tabLabelActive: { fontSize: 11, fontWeight: 600, color: "primary" }
     },
     color: {
       onBackground: "#1D1D1F",
@@ -41,7 +50,10 @@
       onPrimary: "#FFFFFF",
       surfaceVariant: "#F2F2F7",
       placeholder: "#8E8E93",
-      outline: "#D1D1D6"
+      outline: "#D1D1D6",
+      positive: "#34C759",
+      negative: "#FF3B30",
+      segmentSel: "#FFFFFF"
     },
     // Component metrics (points). 8pt spacing grid; 44pt minimum tap target.
     metrics: {
@@ -52,7 +64,16 @@
       button:   { height: 50, radius: 12 },
       field:    { height: 44, radius: 10 },
       card:     { radius: 12 },
-      listItem: { height: 44, radius: 0 }
+      listItem: { height: 44, radius: 0 },
+      appbar:   { height: 52 },
+      tabbar:   { height: 64 },
+      chip:     { height: 34, radius: 17 },
+      segmented:{ height: 36, radius: 9 },
+      avatar:   { size: 40, radius: 20 },
+      actionIcon:{ size: 56, radius: 28 },
+      iconBtn:  { size: 36, radius: 18 },
+      tabDot:   { size: 22, radius: 11 },
+      divider:  { thickness: 1 }
     }
   };
 
@@ -68,7 +89,16 @@
       label:      { fontSize: 14, fontWeight: 500, color: "onBackground" }, // Label Large
       caption:    { fontSize: 12, fontWeight: 400, color: "onBackgroundSecondary" }, // Body Small
       buttonText: { fontSize: 14, fontWeight: 500, color: "onPrimary" }, // Label Large
-      placeholder:{ fontSize: 16, fontWeight: 400, color: "placeholder" }
+      placeholder:{ fontSize: 16, fontWeight: 400, color: "placeholder" },
+      amount:     { fontSize: 40, fontWeight: 400, color: "onBackground" }, // Display
+      value:      { fontSize: 16, fontWeight: 500, color: "onBackground" },
+      symbol:     { fontSize: 14, fontWeight: 400, color: "onBackgroundSecondary" },
+      positive:   { fontSize: 14, fontWeight: 600, color: "positive" },
+      negative:   { fontSize: 14, fontWeight: 600, color: "negative" },
+      neutral:    { fontSize: 14, fontWeight: 600, color: "onBackgroundSecondary" },
+      avatarText: { fontSize: 14, fontWeight: 600, color: "onPrimary" },
+      actionGlyph:{ fontSize: 22, fontWeight: 500, color: "onPrimary" },
+      tabLabelActive: { fontSize: 12, fontWeight: 600, color: "primary" }
     },
     color: {
       onBackground: "#1C1B1F",
@@ -77,7 +107,10 @@
       onPrimary: "#FFFFFF",
       surfaceVariant: "#E7E0EC",
       placeholder: "#79747E",
-      outline: "#79747E"
+      outline: "#CAC4D0",
+      positive: "#2E7D32",
+      negative: "#B3261E",
+      segmentSel: "#E8DEF8"
     },
     // Material metrics (dp). 4/8dp grid; 48dp minimum touch target; full-radius buttons.
     metrics: {
@@ -88,7 +121,16 @@
       button:   { height: 48, radius: 24 },  // fully rounded
       field:    { height: 56, radius: 4 },   // filled text field
       card:     { radius: 12 },
-      listItem: { height: 56, radius: 0 }
+      listItem: { height: 56, radius: 0 },
+      appbar:   { height: 56 },
+      tabbar:   { height: 80 },
+      chip:     { height: 32, radius: 8 },
+      segmented:{ height: 48, radius: 100 },
+      avatar:   { size: 40, radius: 20 },
+      actionIcon:{ size: 56, radius: 16 },
+      iconBtn:  { size: 40, radius: 20 },
+      tabDot:   { size: 24, radius: 12 },
+      divider:  { thickness: 1 }
     }
   };
 
@@ -136,6 +178,56 @@
         break;
       case "listItem":
         node.height = t.metrics.listItem.height;
+        break;
+      case "appbar":
+        node.height = t.metrics.appbar.height;
+        break;
+      case "tabbar":
+        node.height = t.metrics.tabbar.height;
+        setFill("#FFFFFF");
+        break;
+      case "chip":
+        node.height = t.metrics.chip.height;
+        node.cornerRadius = t.metrics.chip.radius;
+        setFill("surfaceVariant");
+        break;
+      case "segmented":
+        node.height = t.metrics.segmented.height;
+        node.cornerRadius = t.metrics.segmented.radius;
+        setFill("surfaceVariant");
+        break;
+      case "segmentSelected":
+        node.cornerRadius = Math.max(0, t.metrics.segmented.radius - 2);
+        setFill("segmentSel");
+        break;
+      case "avatar":
+        node.width = node.height = t.metrics.avatar.size;
+        node.cornerRadius = t.metrics.avatar.radius;
+        setFill("primary");
+        break;
+      case "actionIcon":
+        node.width = node.height = t.metrics.actionIcon.size;
+        node.cornerRadius = t.metrics.actionIcon.radius;
+        setFill("primary");
+        break;
+      case "iconBtn":
+        node.width = node.height = t.metrics.iconBtn.size;
+        node.cornerRadius = t.metrics.iconBtn.radius;
+        setFill("surfaceVariant");
+        break;
+      case "tabDot":
+        node.width = node.height = t.metrics.tabDot.size;
+        node.cornerRadius = t.metrics.tabDot.radius;
+        setFill("surfaceVariant");
+        break;
+      case "tabDotActive":
+        node.width = node.height = t.metrics.tabDot.size;
+        node.cornerRadius = t.metrics.tabDot.radius;
+        setFill("primary");
+        break;
+      case "divider":
+        node.height = t.metrics.divider.thickness;
+        setFill("outline");
         break;
       default:
         break;

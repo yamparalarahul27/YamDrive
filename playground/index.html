@@ -145,9 +145,13 @@
       }
     };
 
-    const JUSTIFY = { MIN: "flex-start", CENTER: "center", MAX: "flex-end", SPACE_BETWEEN: "space-between" };
-    const ALIGN = { MIN: "flex-start", CENTER: "center", MAX: "flex-end" };
+    const JUSTIFY = { MIN: "flex-start", CENTER: "center", MAX: "flex-end", SPACE_BETWEEN: "space-between", SPACE_AROUND: "space-around" };
+    const ALIGN = { MIN: "flex-start", CENTER: "center", MAX: "flex-end", STRETCH: "stretch" };
     const TALIGN = { LEFT: "left", CENTER: "center", RIGHT: "right", JUSTIFIED: "justify" };
+    // Roles that keep a fixed platform height (others hug their content).
+    const FIXED_H = { button: 1, field: 1, listItem: 1, chip: 1, segmented: 1, appbar: 1, tabbar: 1, avatar: 1, actionIcon: 1, iconBtn: 1, tabDot: 1, tabDotActive: 1 };
+    // Roles rendered as a fixed square (icon-like); they take their token size.
+    const SQUARE = { avatar: 1, actionIcon: 1, iconBtn: 1, tabDot: 1, tabDotActive: 1 };
 
     // --- Lightweight schema check (mirrors src/layout.js validateLayoutSpec) ---
     function validate(spec) {
@@ -174,15 +178,20 @@
     function renderNode(node, absolute) {
       const el = document.createElement("div");
       const s = el.style;
+      const square = !!SQUARE[node.role];
 
       if (absolute) {
+        // Parent positions children by absolute x/y with authored box sizes.
         s.position = "absolute";
         s.left = node.x + "px"; s.top = node.y + "px";
         s.width = node.width + "px"; s.height = node.height + "px";
       } else {
-        // Inside an auto-layout stack: keep the authored box size.
-        s.width = node.width + "px";
-        s.flex = "0 0 auto";
+        // Inside an auto-layout stack, let flexbox size children: `grow` fills
+        // the main axis equally, square roles take their fixed size, everything
+        // else hugs its content. Parents fill the cross axis via align: stretch.
+        s.flex = node.grow ? "1 1 0" : "0 0 auto";
+        s.minWidth = "0";
+        if (square) { s.width = node.width + "px"; s.height = node.height + "px"; }
       }
       if (typeof node.opacity === "number") s.opacity = String(node.opacity);
 
@@ -194,7 +203,7 @@
         s.color = node.color || "#1d1d1f";
         s.textAlign = TALIGN[node.textAlign] || "left";
         s.lineHeight = "1.25";
-        if (!absolute) s.height = node.height + "px";
+        if (absolute) s.height = node.height + "px";
         return el;
       }
 
@@ -208,7 +217,7 @@
       // Component roles keep a fixed platform height; layout containers hug
       // their content (matching Figma auto-layout "hug"), so token-driven child
       // height changes never clip a container.
-      const fixedHeight = node.role === "button" || node.role === "field" || node.role === "listItem";
+      const fixedHeight = !!FIXED_H[node.role];
 
       if (lay.mode === "VERTICAL" || lay.mode === "HORIZONTAL") {
         if (!absolute && fixedHeight) { s.height = node.height + "px"; s.overflow = "hidden"; }
@@ -254,12 +263,19 @@
     }
 
     const OUTLINE_EXAMPLE = [
-      "screen Sign in",
-      "  title Welcome back",
-      "  subtitle Sign in to continue",
-      "  field Email address",
-      "  field Password",
-      "  button Sign in"
+      "screen Portfolio",
+      "  appbar Portfolio | ⋯",
+      "  balance Total balance | $12,405.32 | +5.24% today",
+      "  actions Buy | Sell | Send | Receive",
+      "  segmented Overview | Assets | Activity",
+      "  chips All | Gainers | Losers | Watchlist",
+      "  heading Your assets",
+      "  asset BTC | Bitcoin | $64,230.10 | +2.4%",
+      "  asset ETH | Ethereum | $3,120.55 | -1.2%",
+      "  asset SOL | Solana | $148.22 | +6.8%",
+      "  asset USDC | USD Coin | $1.00 | 0.0%",
+      "  spacer 8",
+      "  tabbar Home | Markets | Trade | Wallet"
     ].join("\n");
 
     const input = document.getElementById("input");
