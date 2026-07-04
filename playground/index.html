@@ -363,6 +363,33 @@
       root.style.height = dev.height + "px";
       canvas.appendChild(root);
       screenEl.appendChild(canvas);
+
+      // Faux status bar in the top safe area (time + signal/wifi/battery).
+      if (spec.safeTop && !landscape) {
+        const isSheet = spec.root && spec.root.sheet;
+        const color = (spec.theme === "dark" || isSheet) ? "#ffffff" : "#0b0b0c";
+        const sb = document.createElement("div");
+        Object.assign(sb.style, {
+          position: "absolute", top: "0", left: "0", right: "0",
+          height: Math.round(Math.min(spec.safeTop, 48) * scale) + "px",
+          display: "flex", alignItems: "center", justifyContent: "space-between",
+          padding: "0 " + Math.round(24 * scale) + "px", color: color, zIndex: "30",
+          fontFamily: FONT_STACK[fontChoice] || spec.fontFamily || "inherit",
+          fontWeight: "600", fontSize: Math.round(14 * scale) + "px", pointerEvents: "none"
+        });
+        const time = document.createElement("div"); time.textContent = "9:41";
+        const icons = document.createElement("div");
+        Object.assign(icons.style, { display: "flex", alignItems: "center", gap: Math.round(5 * scale) + "px", color: color });
+        const ih = Math.round(13 * scale);
+        ["signal", "wifi", "battery"].forEach(n => {
+          const d = document.createElement("div");
+          d.style.height = ih + "px"; d.style.width = (n === "battery" ? Math.round(ih * 1.5) : ih) + "px";
+          if (typeof ICONS !== "undefined" && ICONS.has(n)) d.innerHTML = ICONS.svg(n);
+          icons.appendChild(d);
+        });
+        sb.append(time, icons);
+        screenEl.appendChild(sb);
+      }
     }
 
     // End-to-end crypto-exchange flow, modeled on WEEX (copy trading), Binance

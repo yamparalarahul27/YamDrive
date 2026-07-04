@@ -439,11 +439,14 @@
       const handle = frame("group", "HORIZONTAL", { primaryAxisAlignItems: "CENTER" }, [grabber]);
       const card = frame("sheet", "VERTICAL", { paddingTop: 14, paddingBottom: 24, paddingLeft: 20, paddingRight: 20, itemSpacing: 16, counterAxisAlignItems: "STRETCH" }, [handle].concat(content));
       rootNode.children = [card];
+      rootNode.sheet = true; // scrim: skip safe-area padding in tokens
       rootNode.layout = { mode: "VERTICAL", paddingTop: 0, paddingBottom: 0, itemSpacing: 0, primaryAxisAlignItems: "MAX", counterAxisAlignItems: "STRETCH" };
       rootNode.fills = [{ type: "SOLID", color: "rgba(0,0,0,0.45)" }]; // scrim (pre-set so tokens keep it)
     } else {
-      rootNode.layout = Object.assign({ mode: "VERTICAL", paddingTop: 12, paddingBottom: 24, itemSpacing: SPACING, primaryAxisAlignItems: "MIN", counterAxisAlignItems: "STRETCH" }, rootNode.layout);
+      // Leave top/bottom padding for tokens to fill with safe-area insets.
+      rootNode.layout = Object.assign({ mode: "VERTICAL", itemSpacing: SPACING, primaryAxisAlignItems: "MIN", counterAxisAlignItems: "STRETCH" }, rootNode.layout);
       delete rootNode.layout.paddingLeft; delete rootNode.layout.paddingRight;
+      delete rootNode.layout.paddingTop; delete rootNode.layout.paddingBottom;
     }
     layoutNode(rootNode, 0, 0, DEVICE.width);
     rootNode.width = DEVICE.width; rootNode.height = DEVICE.height;

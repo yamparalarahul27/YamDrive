@@ -108,7 +108,8 @@
       switch:   { width: 46, height: 28, knob: 24 },
       tag:      { height: 24, radius: 6 },
       banner:   { radius: 12 },
-      smallbtn: { height: 34, radius: 8 }
+      smallbtn: { height: 34, radius: 8 },
+      safeTop: 59, safeBottom: 34   // Dynamic Island + home indicator
     }
   };
 
@@ -200,7 +201,8 @@
       switch:   { width: 52, height: 32, knob: 26 },
       tag:      { height: 24, radius: 8 },
       banner:   { radius: 12 },
-      smallbtn: { height: 34, radius: 18 }
+      smallbtn: { height: 34, radius: 18 },
+      safeTop: 28, safeBottom: 24   // status bar + gesture nav
     }
   };
 
@@ -378,6 +380,7 @@
         break;
       case "sheet":
         setFill("background");
+        if (node.layout) node.layout.paddingBottom = (node.layout.paddingBottom || 0) + t.metrics.safeBottom;
         break;
       case "grabber":
         node.height = 5;
@@ -390,13 +393,18 @@
 
     if (isRoot || node.role === "screen") {
       if (!hasFill) node.fills = [{ type: "SOLID", color: resolveColor(pal, "background") }];
-      // Apply platform screen margins + spacing only where the author left gaps.
+      // Apply platform screen margins + spacing, and safe-area insets on top/
+      // bottom (skipped for a sheet's scrim, which stays full-bleed).
       const lay = node.layout;
       if (lay && (lay.mode === "VERTICAL" || lay.mode === "HORIZONTAL")) {
-        const m = t.metrics.screenMargin;
-        if (lay.paddingLeft == null) lay.paddingLeft = m;
-        if (lay.paddingRight == null) lay.paddingRight = m;
-        if (lay.itemSpacing == null) lay.itemSpacing = t.metrics.itemSpacing;
+        const m = t.metrics;
+        if (lay.paddingLeft == null) lay.paddingLeft = m.screenMargin;
+        if (lay.paddingRight == null) lay.paddingRight = m.screenMargin;
+        if (lay.itemSpacing == null) lay.itemSpacing = m.itemSpacing;
+        if (!node.sheet) {
+          lay.paddingTop = m.safeTop + (lay.paddingTop || 8);
+          lay.paddingBottom = m.safeBottom + (lay.paddingBottom || 8);
+        }
       }
     }
   }
@@ -419,6 +427,8 @@
     out.platform = platform;
     out.theme = theme === "dark" ? "dark" : "light";
     out.fontFamily = t.fontFamily;
+    out.safeTop = t.metrics.safeTop;
+    out.safeBottom = t.metrics.safeBottom;
     walk(out.root, t, pal, true);
     return out;
   }

@@ -31,6 +31,12 @@ viewport; the content reflows into it (auto-layout stretches/hugs rather than
 rotating). A portrait screen taller than the landscape height clips at the
 bottom, as it would on a device that doesn't re-flow for landscape.
 
+**Safe areas** — screens inset content by each platform's safe-area top/bottom
+(iOS 59/34, Android 28/24), and a faux status bar (9:41 + signal/wifi/battery)
+is drawn in the top zone, so content clears the Dynamic Island / status bar and
+the home indicator. Bottom sheets add the bottom inset to their card; full-bleed
+charts still extend to the horizontal edges.
+
 **Dark** — the *Dark* checkbox renders the same spec with each platform's dark
 palette (Apple + Material 3). It's a color swap on top of the role/token system,
 so every screen has a dark variant for free — good for chart-forward asset
