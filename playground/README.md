@@ -115,6 +115,11 @@ a real financial product (e.g. a crypto exchange):
 | `dapp Polymarket` | app-icon tile (rounded-square logo + label) |
 | `bignum $6,100 \| -2.12%` | big centered value + sub-caption |
 | `keypad` | numeric keypad (1-9, ., 0, ⌫) |
+| `cardbig Bitcoin \| BTC \| $1.32T \| +2.4% [\| blue]` | always-dark asset card: logo, name + verified, value + ▲, change, sparkline (`blue` = brand variant) |
+
+`grid` is a **container** (nest `cardbig` lines) that lays cards out in a
+2-column grid — used by the post-order `Upsell` screen ("People have also
+traded these assets").
 
 **Bottom sheets:** add `sheet` after a screen name — `screen Leverage | sheet` —
 to render its content as a rounded card anchored to the bottom over a dimmed

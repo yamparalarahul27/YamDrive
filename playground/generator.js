@@ -22,7 +22,7 @@
   const DEVICE = { width: 393, height: 852 };
   const MARGIN = 16, SPACING = 16, PAD = 16;
 
-  const CONTAINERS = { screen: 1, card: 1, row: 1, column: 1, section: 1, group: 1, list: 1, carousel: 1 };
+  const CONTAINERS = { screen: 1, card: 1, row: 1, column: 1, section: 1, group: 1, list: 1, carousel: 1, grid: 1 };
   const TEXT_ROLES = {
     display: 1, title: 1, subtitle: 1, heading: 1, body: 1, label: 1, caption: 1,
     amount: 1, value: 1, symbol: 1, positive: 1, negative: 1, neutral: 1
@@ -32,7 +32,7 @@
     tabbar: 1, avatar: 1, divider: 1, spacer: 1, chart: 1, stats: 1, stat: 1, slider: 1,
     switch: 1, banner: 1, tag: 1, trader: 1, orderform: 1, iconbtn: 1, quote: 1, timeframe: 1,
     account: 1, buttons: 1, tabs: 1, statbar: 1, position: 1, posdetail: 1, tile: 1, dapp: 1,
-    keypad: 1, bignum: 1, receipthead: 1, sharebtn: 1
+    keypad: 1, bignum: 1, receipthead: 1, sharebtn: 1, cardbig: 1
   };
 
   const TEXT_HEIGHT = {
@@ -63,6 +63,7 @@
     };
   }
   function grow(node) { node.grow = true; return node; }
+  function txtC(role, chars, color, align) { const t = txt(role, chars, align); t.color = color; return t; } // explicit color (theme-independent)
   function initials(s) { return String(s || "").replace(/[^A-Za-z0-9]/g, "").slice(0, 3).toUpperCase() || "•"; }
   function glyphFor(s) { const k = String(s || "").trim().toLowerCase(); return GLYPH[k] || initials(s).slice(0, 1); }
   function changeRole(s) { const t = String(s || "").trim(); if (t[0] === "-" || /^[▼↓]/.test(t)) return "negative"; if (t[0] === "+" || /^[▲↑]/.test(t)) return "positive"; return "neutral"; }
@@ -253,6 +254,23 @@
       }
       case "sharebtn":
         return frame("button", "HORIZONTAL", { itemSpacing: 8, primaryAxisAlignItems: "CENTER", counterAxisAlignItems: "CENTER" }, [txt("buttonText", f[0] || "Share", "CENTER"), iconNode("export", 18, "onPrimary", "⬆")]);
+      case "cardbig": {
+        // name | symbol | value | change [| blue]  — always-dark asset card w/ sparkline
+        const blue = /blue/i.test(f[4] || "");
+        const white = "#FFFFFF", gray = "#9BA1A6", green = "#4ADE80", check = "#4DA2FF";
+        const head = frame("group", "HORIZONTAL", { itemSpacing: 8, counterAxisAlignItems: "CENTER" }, [
+          avatar(f[1] || f[0], 30),
+          frame("group", "VERTICAL", { itemSpacing: 1, counterAxisAlignItems: "MIN" }, [
+            frame("group", "HORIZONTAL", { itemSpacing: 4, counterAxisAlignItems: "CENTER" }, [txtC("value", f[0] || "", white), iconNode("verified", 14, check, "")]),
+            txtC("caption", "$" + (f[1] || f[0] || ""), gray)
+          ])
+        ]);
+        const valueRow = frame("group", "HORIZONTAL", { itemSpacing: 5, counterAxisAlignItems: "CENTER" }, [txtC("navTitle", f[2] || "", white), iconNode("arrow-up", 12, green, "▲")]);
+        const chart = frame("chart", "NONE", {}, []); chart.up = true; chart.lineOnly = true; chart.chartHeight = 46; chart.points = chartPoints((f[0] || "") + (f[1] || ""), true);
+        const card = frame("cardbig", "VERTICAL", { paddingTop: 14, paddingBottom: 14, paddingLeft: 14, paddingRight: 14, itemSpacing: 8, counterAxisAlignItems: "STRETCH" }, [head, valueRow, txtC("positive", f[3] || "", green), chart]);
+        card.blue = blue;
+        return card;
+      }
       case "keypad": {
         const key = (label) => grow(frame("key", "HORIZONTAL", { primaryAxisAlignItems: "CENTER", counterAxisAlignItems: "CENTER" }, [txt("key", label, "CENTER")]));
         const rowOf = (a, b, c) => frame("group", "HORIZONTAL", { itemSpacing: 8 }, [key(a), key(b), key(c)]);
@@ -376,6 +394,15 @@
       const body = frame("group", "HORIZONTAL", { itemSpacing: 12, counterAxisAlignItems: "MIN" }, (node.children || []).map(toSpecNode));
       body.scrollX = true;
       return frame("group", "VERTICAL", { itemSpacing: 12, counterAxisAlignItems: "STRETCH" }, [header, body]);
+    }
+    // A 2-column grid: children chunked into rows of two, each half-width.
+    if (node.role === "grid") {
+      const items = (node.children || []).map(toSpecNode);
+      const rows = [];
+      for (let i = 0; i < items.length; i += 2) {
+        rows.push(frame("group", "HORIZONTAL", { itemSpacing: 12, counterAxisAlignItems: "STRETCH" }, items.slice(i, i + 2).map(grow)));
+      }
+      return frame("group", "VERTICAL", { itemSpacing: 12, counterAxisAlignItems: "STRETCH" }, rows);
     }
     const name = (node.content || node.role).slice(0, 40) || node.role;
     if (TEXT_ROLES[node.role]) return txt(node.role, node.content || "", "LEFT");

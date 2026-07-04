@@ -338,9 +338,14 @@
         setFill("infoBg");
         break;
       case "chart":
-        node.height = node.bleed ? 240 : t.metrics.chart.height;
+        node.height = node.bleed ? 240 : (node.chartHeight || t.metrics.chart.height);
         node.lineColor = node.up === false ? pal.negative : pal.positive;
         if (node.bleed) node.bleedMargin = t.metrics.screenMargin;
+        break;
+      case "cardbig":
+        node.cornerRadius = 16;
+        setFill(node.blue ? "#1E5AE0" : "#141416"); // always-dark card (or brand blue)
+        if (!node.blue) { node.stroke = "rgba(255,255,255,0.08)"; node.strokeWeight = 1; } // separate from dark bg
         break;
       case "slider":
         node.height = t.metrics.slider.height;
