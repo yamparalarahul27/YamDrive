@@ -33,7 +33,7 @@
     switch: 1, banner: 1, tag: 1, trader: 1, orderform: 1, iconbtn: 1, quote: 1, timeframe: 1,
     account: 1, buttons: 1, tabs: 1, statbar: 1, position: 1, posdetail: 1, tile: 1, dapp: 1,
     keypad: 1, bignum: 1, receipthead: 1, sharebtn: 1, cardbig: 1,
-    back: 1, progress: 1, level: 1, infocard: 1, sheethead: 1
+    back: 1, progress: 1, level: 1, infocard: 1, sheethead: 1, profilecard: 1
   };
 
   const TEXT_HEIGHT = {
@@ -65,6 +65,8 @@
   }
   function grow(node) { node.grow = true; return node; }
   function txtC(role, chars, color, align) { const t = txt(role, chars, align); t.color = color; return t; } // explicit color (theme-independent)
+  function txtF(role, chars, color, family, align) { const t = txt(role, chars, align); if (color) t.color = color; if (family) t.fontFamily = family; return t; }
+  function logoCircle(hex, size) { const a = frame("avatar", "HORIZONTAL", { primaryAxisAlignItems: "CENTER", counterAxisAlignItems: "CENTER" }, []); a.avatarSize = size; a.fills = [{ type: "SOLID", color: hex }]; return a; }
   function initials(s) { return String(s || "").replace(/[^A-Za-z0-9]/g, "").slice(0, 3).toUpperCase() || "•"; }
   function glyphFor(s) { const k = String(s || "").trim().toLowerCase(); return GLYPH[k] || initials(s).slice(0, 1); }
   function changeRole(s) { const t = String(s || "").trim(); if (t[0] === "-" || /^[▼↓]/.test(t)) return "negative"; if (t[0] === "+" || /^[▲↑]/.test(t)) return "positive"; return "neutral"; }
@@ -229,6 +231,30 @@
       }
       case "sheethead":
         return frame("group", "HORIZONTAL", { primaryAxisAlignItems: "SPACE_BETWEEN", counterAxisAlignItems: "CENTER" }, [txt("heading", f[0] || ""), iconBtn("x")]);
+      case "profilecard": {
+        // name | tag1 | tag2  — lanyard/ID-badge card (bespoke olive styling)
+        const ink = "#3E4A2A", green = "#8FA25B", pillBd = "#E1E4DA", slotC = "#E9EBE3";
+        const serif = 'Georgia, "Times New Roman", serif';
+        const mono = 'ui-monospace, Menlo, "Courier New", monospace';
+        const slotBar = frame("group", "HORIZONTAL", { primaryAxisAlignItems: "CENTER" }, [(function () { const b = frame("idslot", "NONE", {}, []); b.fixedW = 74; b.fixedH = 13; b.cornerRadius = 7; b.fills = [{ type: "SOLID", color: slotC }]; return b; })()]);
+        const seal = frame("idseal", "VERTICAL", { primaryAxisAlignItems: "CENTER", counterAxisAlignItems: "CENTER", itemSpacing: 3 }, [logoCircle("#C4CDB2", 26), txtF("caption", "MEMBER", green, mono, "CENTER"), txtF("caption", "SINCE 2024", green, mono, "CENTER")]);
+        seal.fixedW = 104; seal.fixedH = 104; seal.cornerRadius = 52; seal.stroke = "#E4E7DC"; seal.strokeWeight = 2;
+        const topRow = frame("group", "HORIZONTAL", { primaryAxisAlignItems: "SPACE_BETWEEN", counterAxisAlignItems: "MIN" }, [logoCircle(ink, 58), seal]);
+        const wordmark = txtF("amount", f[0] || "Markscout", ink, serif, "LEFT");
+        const pillOf = (t) => { const p = frame("idpill", "HORIZONTAL", { paddingTop: 8, paddingBottom: 8, paddingLeft: 16, paddingRight: 16, primaryAxisAlignItems: "CENTER", counterAxisAlignItems: "CENTER" }, [txtF("label", t, green, mono, "CENTER")]); p.stroke = pillBd; p.strokeWeight = 1; p.cornerRadius = 22; return p; };
+        const tags = frame("group", "HORIZONTAL", { itemSpacing: 10 }, [pillOf(f[1] || "ALPHA USER"), pillOf(f[2] || "#54801")]);
+        const div = frame("divider", "NONE", {}, []); div.dashed = true; div.dashColor = "#CBD0C0";
+        const info = frame("group", "HORIZONTAL", { primaryAxisAlignItems: "SPACE_BETWEEN", counterAxisAlignItems: "MIN" }, [
+          frame("group", "VERTICAL", { itemSpacing: 3, counterAxisAlignItems: "MIN" }, [txtF("caption", "GLOBAL / UTC", green, mono), txtF("caption", "MEMBER SINCE OCT 25'", green, mono), txtF("caption", "09:45.16AM", green, mono)]),
+          txtF("caption", "ACCOUNT ACTIVE", green, mono, "RIGHT")
+        ]);
+        const cust = frame("idbtn", "HORIZONTAL", { paddingTop: 12, paddingBottom: 12, paddingLeft: 20, paddingRight: 20, primaryAxisAlignItems: "CENTER", counterAxisAlignItems: "CENTER" }, [txtF("label", "CUSTOMISE", ink, mono, "CENTER")]); cust.fills = [{ type: "SOLID", color: "#EAECE4" }]; cust.cornerRadius = 22;
+        const qr = frame("qr", "NONE", {}, []); qr.qrSize = 104; qr.qrColor = ink;
+        const bottom = frame("group", "HORIZONTAL", { primaryAxisAlignItems: "SPACE_BETWEEN", counterAxisAlignItems: "MAX" }, [cust, qr]);
+        const card = frame("idcard", "VERTICAL", { paddingTop: 22, paddingBottom: 22, paddingLeft: 22, paddingRight: 22, itemSpacing: 22, counterAxisAlignItems: "STRETCH" }, [slotBar, topRow, wordmark, tags, div, info, bottom]);
+        card.fills = [{ type: "SOLID", color: "#FFFFFF" }]; card.stroke = "#ECEEE9"; card.strokeWeight = 1; card.cornerRadius = 28;
+        return card;
+      }
       case "slider": { const p = parseInt(f[0], 10); const s = frame("slider", "NONE", {}, []); s.pct = isNaN(p) ? 50 : Math.max(0, Math.min(100, p)); return s; }
       case "switch": {
         const on = /^(on|true|yes|1)$/i.test((f[1] || "").trim());
@@ -491,11 +517,12 @@
     if (node.role === "tfmark") { node.width = 16; node.height = 3; return node.height; }
     if (node.role === "icon") { node.width = node.height = node.iconSize || 20; return node.height; }
     if (node.role === "avatar" && node.avatarSize) { node.width = node.height = node.avatarSize; layoutChildren(node, x, node.avatarSize); return node.height; }
+    if (node.role === "qr") { node.width = node.height = node.qrSize || 100; return node.height; }
     const size = COMPONENT_SIZE[node.role];
     if (size != null) { node.width = size; layoutChildren(node, x, size); node.height = size; return node.height; }
     const content = layoutChildren(node, x, width);
     const fixed = COMPONENT_H[node.role];
-    node.height = node.role === "screen" ? DEVICE.height : (fixed != null ? fixed : content);
+    node.height = node.role === "screen" ? DEVICE.height : (node.fixedH != null ? node.fixedH : (fixed != null ? fixed : content));
     return node.height;
   }
 

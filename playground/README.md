@@ -148,6 +148,7 @@ carousel Trending Stocks | new
 | `stat Available \| ₹80,000` | single key/value row (spaced apart) |
 | `stat Status \| Confirmed \| ok` | key/value with a green ✓ (use `ok`), or an icon name as the 3rd field |
 | `sheethead Withdraw` | sheet header: title + close (×) |
+| `profilecard Markscout \| ALPHA USER \| #54801` | lanyard/ID-badge card: logo, member seal, serif wordmark, outlined pills, dotted divider, mono info, QR |
 | `banner 1% TDS on sells \| KYC verified` | tinted info banner (`\|` joins with ·) |
 | `tag 10x` | small pill badge |
 | `avatar BTC` | circular initials badge |

@@ -219,6 +219,24 @@
       el.append(track, fill, dot);
     }
 
+    function drawQR(el, node) {
+      const color = node.qrColor || "#111", N = 21, cell = 100 / N;
+      let r = "";
+      const finder = (ox, oy) => {
+        r += '<rect x="' + (ox * cell) + '" y="' + (oy * cell) + '" width="' + (7 * cell) + '" height="' + (7 * cell) + '" fill="' + color + '"/>';
+        r += '<rect x="' + ((ox + 1) * cell) + '" y="' + ((oy + 1) * cell) + '" width="' + (5 * cell) + '" height="' + (5 * cell) + '" fill="#fff"/>';
+        r += '<rect x="' + ((ox + 2) * cell) + '" y="' + ((oy + 2) * cell) + '" width="' + (3 * cell) + '" height="' + (3 * cell) + '" fill="' + color + '"/>';
+      };
+      let h = hashStr(node.qrSeed || "markscout") | 1;
+      for (let y = 0; y < N; y++) for (let x = 0; x < N; x++) {
+        if ((x < 8 && y < 8) || (x > N - 9 && y < 8) || (x < 8 && y > N - 9)) continue;
+        h = (h * 1103515245 + 12345) & 0x7fffffff;
+        if ((h >> 6) & 1) r += '<rect x="' + (x * cell) + '" y="' + (y * cell) + '" width="' + cell + '" height="' + cell + '" fill="' + color + '"/>';
+      }
+      finder(0, 0); finder(N - 7, 0); finder(0, N - 7);
+      el.innerHTML = '<svg viewBox="0 0 100 100" width="100%" height="100%" style="display:block">' + r + '</svg>';
+    }
+
     function drawProgress(el, node) {
       el.style.position = "relative";
       const pct = Math.max(0, Math.min(100, node.pct == null ? 50 : node.pct));
@@ -277,6 +295,7 @@
         s.minWidth = "0";
         if (square || node.role === "tfmark") { s.width = node.width + "px"; s.height = node.height + "px"; }
         else if (node.fixedW) s.width = node.fixedW + "px";
+        if (node.fixedH) s.height = node.fixedH + "px";
       }
       if (typeof node.opacity === "number") s.opacity = String(node.opacity);
 
@@ -288,6 +307,7 @@
         s.color = node.color || "#1d1d1f";
         s.textAlign = TALIGN[node.textAlign] || "left";
         s.lineHeight = "1.25";
+        if (node.fontFamily) s.fontFamily = node.fontFamily;
         if (absolute) s.height = node.height + "px";
         return el;
       }
@@ -298,6 +318,9 @@
       if (node.cornerRadius) s.borderRadius = node.cornerRadius + "px";
       if (node.role === "sheet") s.borderRadius = "22px 22px 0 0"; // rounded top only
       if (node.stroke) s.border = (node.strokeWeight || 1) + "px solid " + node.stroke;
+      if (node.dashed) { s.background = "none"; s.borderTop = "2px dotted " + (node.dashColor || "#ccc"); }
+
+      if (node.role === "qr") { s.width = node.width + "px"; s.height = node.height + "px"; drawQR(el, node); return el; }
 
       // Custom-drawn components.
       if (node.role === "icon") {
@@ -552,6 +575,10 @@
       "    cardbig Solana | SOL | $71B | +6.8%",
       "    cardbig Polymarket | POLY | $2.19B | +3.1% | blue",
       "  buttons Continue*",
+      "",
+      "screen Profile",
+      "  header  | Profile | ",
+      "  profilecard Markscout | ALPHA USER | #54801",
       "",
       "screen Withdraw | sheet",
       "  sheethead Withdraw",
