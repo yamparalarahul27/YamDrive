@@ -1,0 +1,720 @@
+<!doctype html>
+<html lang="en">
+<head>
+  <meta charset="utf-8" />
+  <meta name="viewport" content="width=device-width, initial-scale=1" />
+  <title>Mobile Design Playground</title>
+  <link rel="stylesheet" href="fonts.css" />
+  <style>
+    :root {
+      --bg: #f5f5f7;
+      --panel: #ffffff;
+      --ink: #1d1d1f;
+      --muted: #6e6e73;
+      --line: #e5e5ea;
+      --accent: #0a84ff;
+      --stage: #ececed;
+      --mono: ui-monospace, SFMono-Regular, "SF Mono", Menlo, monospace;
+      --sans: 'Geist', -apple-system, BlinkMacSystemFont, "Segoe UI", Roboto, sans-serif;
+    }
+    @media (prefers-color-scheme: dark) {
+      :root {
+        --bg: #1c1c1e; --panel: #2c2c2e; --ink: #f5f5f7; --muted: #98989d;
+        --line: #3a3a3c; --stage: #161617;
+      }
+    }
+    * { box-sizing: border-box; }
+    html, body { margin: 0; height: 100%; }
+    body {
+      font-family: var(--sans); color: var(--ink); background: var(--bg);
+      display: grid; grid-template-columns: minmax(320px, 420px) 1fr; height: 100vh;
+    }
+    @media (max-width: 820px) { body { grid-template-columns: 1fr; grid-template-rows: auto 1fr; } }
+
+    /* --- Editor pane --- */
+    .editor { display: flex; flex-direction: column; border-right: 1px solid var(--line); min-height: 0; background: var(--panel); }
+    .editor header { padding: 16px 18px 10px; border-bottom: 1px solid var(--line); }
+    .editor h1 { font-size: 16px; margin: 0 0 3px; letter-spacing: -0.01em; }
+    .editor p { font-size: 12px; color: var(--muted); margin: 0; line-height: 1.45; }
+    .toolbar { display: flex; gap: 8px; padding: 10px 18px; flex-wrap: wrap; align-items: center; }
+    button {
+      font: inherit; font-size: 12px; font-weight: 550; padding: 6px 12px; border-radius: 8px;
+      border: 1px solid var(--line); background: var(--bg); color: var(--ink); cursor: pointer;
+    }
+    button.primary { background: var(--accent); border-color: var(--accent); color: #fff; }
+    button:active { transform: translateY(1px); }
+    .toggle { font-size: 12px; color: var(--muted); display: inline-flex; align-items: center; gap: 6px; cursor: pointer; user-select: none; }
+    .toggle input { accent-color: var(--accent); }
+    .toggle select { font: inherit; font-size: 12px; margin-left: 4px; border: 1px solid var(--line); border-radius: 6px; background: var(--bg); color: var(--ink); padding: 3px 4px; }
+    .tabs { display: flex; gap: 4px; padding: 8px 18px 0; }
+    .tab { border: none; border-bottom: 2px solid transparent; background: none; border-radius: 0; padding: 6px 4px; color: var(--muted); font-size: 12px; font-weight: 600; }
+    .tab.active { color: var(--ink); border-bottom-color: var(--accent); }
+    textarea {
+      flex: 1; min-height: 0; width: 100%; resize: none; border: none; outline: none;
+      padding: 14px 18px; font-family: var(--mono); font-size: 12px; line-height: 1.5;
+      background: transparent; color: var(--ink); tab-size: 2;
+    }
+    .status { padding: 8px 18px; font-family: var(--mono); font-size: 11px; border-top: 1px solid var(--line); min-height: 34px; }
+    .status.ok { color: #1a7f37; }
+    .status.err { color: #d1242f; white-space: pre-wrap; }
+    @media (prefers-color-scheme: dark) { .status.ok { color: #3fb950; } .status.err { color: #f85149; } }
+
+    /* --- Stage --- */
+    .stage { background: var(--stage); overflow: auto; padding: 28px 40px 40px; display: flex; flex-direction: column; align-items: center; gap: 22px; }
+    .devices { display: flex; gap: 56px; justify-content: center; align-items: flex-start; flex-wrap: wrap; }
+    .screenbar { display: flex; gap: 8px; flex-wrap: nowrap; overflow-x: auto; overflow-y: hidden; justify-content: flex-start; align-self: stretch; padding-bottom: 4px; position: sticky; top: 0; z-index: 5; scrollbar-width: thin; }
+    .screenbar:empty { display: none; }
+    .schip { flex: 0 0 auto; white-space: nowrap; font-size: 12px; font-weight: 600; padding: 6px 13px; border-radius: 999px; border: 1px solid var(--line); background: var(--panel); color: var(--muted); cursor: pointer; }
+    .schip.active { background: var(--accent); border-color: var(--accent); color: #fff; }
+    .device { display: flex; flex-direction: column; align-items: center; gap: 14px; }
+    .device .label { font-size: 12px; color: var(--muted); font-weight: 550; }
+
+    /* iPhone bezel */
+    .iphone { padding: 12px; background: #1a1a1c; border-radius: 54px; box-shadow: 0 30px 60px rgba(0,0,0,.28), inset 0 0 0 2px #3a3a3c; }
+    .iphone .screen { border-radius: 42px; overflow: hidden; position: relative; background: #fff; }
+    .iphone .island { position: absolute; top: 10px; left: 50%; transform: translateX(-50%); width: 32%; height: 26px; background: #0b0b0c; border-radius: 20px; z-index: 20; }
+
+    /* Android bezel */
+    .android { padding: 10px; background: #202124; border-radius: 34px; box-shadow: 0 30px 60px rgba(0,0,0,.28), inset 0 0 0 2px #3c4043; }
+    .android .screen { border-radius: 26px; overflow: hidden; position: relative; background: #fff; }
+    .android .punch { position: absolute; top: 12px; left: 50%; transform: translateX(-50%); width: 11px; height: 11px; background: #0b0b0c; border-radius: 50%; z-index: 20; }
+
+    /* Landscape: move the notch/punch to the left edge (device turned 90°). */
+    .iphone.land .island { top: 50%; left: 10px; transform: translateY(-50%); width: 26px; height: 32%; }
+    .android.land .punch { top: 50%; left: 12px; transform: translateY(-50%); }
+
+    .screen .canvas { transform-origin: top left; }
+    .node-text { white-space: pre-wrap; overflow: hidden; }
+  </style>
+</head>
+<body>
+  <section class="editor">
+    <header>
+      <h1>Mobile Design Playground</h1>
+      <p><b>Describe</b> a screen as an outline, or edit the <code>layout.json</code> directly. It renders live in iPhone + Android mockups. Same schema as the capture tool and Figma plugin.</p>
+    </header>
+    <div class="tabs">
+      <button class="tab active" id="tabDescribe">Describe</button>
+      <button class="tab" id="tabJson">layout.json</button>
+    </div>
+    <div class="toolbar">
+      <button class="primary" id="render">Render</button>
+      <button id="loadExample">Load example</button>
+      <button id="format">Format JSON</button>
+      <label class="toggle"><input type="checkbox" id="guidelines" checked /> Apply Apple / Material guidelines</label>
+      <label class="toggle"><input type="checkbox" id="landscape" /> Landscape</label>
+      <label class="toggle"><input type="checkbox" id="dark" /> Dark</label>
+      <label class="toggle">Font
+        <select id="font">
+          <option value="Inter" selected>Inter</option>
+          <option value="Geist">Geist</option>
+          <option value="System">System (SF/Roboto)</option>
+        </select>
+      </label>
+    </div>
+    <textarea id="outline" spellcheck="false" autocomplete="off" placeholder="screen Sign in&#10;  title Welcome back&#10;  field Email address&#10;  button Sign in"></textarea>
+    <textarea id="input" spellcheck="false" autocomplete="off" hidden></textarea>
+    <div class="status" id="status"></div>
+  </section>
+
+  <section class="stage" id="stage">
+    <div class="screenbar" id="screenbar"></div>
+    <div class="devices">
+      <div class="device">
+        <div class="label" id="iosLabel">iPhone · iOS</div>
+        <div class="iphone"><div class="island"></div><div class="screen" id="iosScreen"></div></div>
+      </div>
+      <div class="device">
+        <div class="label" id="androidLabel">Pixel · Android</div>
+        <div class="android"><div class="punch"></div><div class="screen" id="androidScreen"></div></div>
+      </div>
+    </div>
+  </section>
+
+  <script src="icons.js"></script>
+  <script src="tokens.js"></script>
+  <script src="generator.js"></script>
+  <script>
+    // Target on-screen width (CSS px) each mockup renders at; the spec's point
+    // dimensions are scaled to fit this so different device sizes look right.
+    const IOS_W = 300;
+    const ANDROID_W = 300;
+    const LANDSCAPE_W = 430; // on-screen width per device when rotated
+
+    // Role-based spec: it names each node's semantic `role` and carries content
+    // + geometry, but leaves typography, colors, and component metrics to the
+    // platform tokens (tokens.js). With guidelines ON, the same spec renders
+    // Apple-styled in the iPhone and Material-styled on the Pixel.
+    const EXAMPLE = {
+      schemaVersion: 1,
+      source: "manual",
+      name: "Sign in (roles)",
+      device: { width: 393, height: 852 },
+      root: {
+        type: "FRAME", name: "Sign in", role: "screen", x: 0, y: 0, width: 393, height: 852,
+        cornerRadius: 0,
+        layout: { mode: "VERTICAL", paddingTop: 88, paddingBottom: 24, itemSpacing: 16, primaryAxisAlignItems: "MIN", counterAxisAlignItems: "MIN" },
+        children: [
+          { type: "TEXT", role: "title", name: "Heading", x: 16, y: 88, width: 345, height: 42, characters: "Welcome back", textAlign: "LEFT" },
+          { type: "TEXT", role: "subtitle", name: "Subheading", x: 16, y: 140, width: 345, height: 24, characters: "Sign in to continue", textAlign: "LEFT" },
+          { type: "FRAME", role: "field", name: "Email field", x: 16, y: 190, width: 345, height: 52,
+            layout: { mode: "HORIZONTAL", paddingLeft: 16, paddingRight: 16, itemSpacing: 8, primaryAxisAlignItems: "MIN", counterAxisAlignItems: "CENTER" },
+            children: [ { type: "TEXT", role: "placeholder", name: "Email placeholder", x: 16, y: 15, width: 300, height: 22, characters: "Email address", textAlign: "LEFT" } ] },
+          { type: "FRAME", role: "field", name: "Password field", x: 16, y: 258, width: 345, height: 52,
+            layout: { mode: "HORIZONTAL", paddingLeft: 16, paddingRight: 16, itemSpacing: 8, primaryAxisAlignItems: "MIN", counterAxisAlignItems: "CENTER" },
+            children: [ { type: "TEXT", role: "placeholder", name: "Password placeholder", x: 16, y: 15, width: 300, height: 22, characters: "Password", textAlign: "LEFT" } ] },
+          { type: "FRAME", role: "button", name: "Sign in button", x: 16, y: 326, width: 345, height: 52,
+            layout: { mode: "HORIZONTAL", itemSpacing: 8, primaryAxisAlignItems: "CENTER", counterAxisAlignItems: "CENTER" },
+            children: [ { type: "TEXT", role: "buttonText", name: "Button label", x: 150, y: 15, width: 120, height: 22, characters: "Sign in", textAlign: "CENTER" } ] }
+        ]
+      }
+    };
+
+    const JUSTIFY = { MIN: "flex-start", CENTER: "center", MAX: "flex-end", SPACE_BETWEEN: "space-between", SPACE_AROUND: "space-around" };
+    const ALIGN = { MIN: "flex-start", CENTER: "center", MAX: "flex-end", STRETCH: "stretch" };
+    const TALIGN = { LEFT: "left", CENTER: "center", RIGHT: "right", JUSTIFIED: "justify" };
+    // Roles that keep a fixed platform height (others hug their content).
+    const FIXED_H = { button: 1, buttonSecondary: 1, field: 1, listItem: 1, chip: 1, segmented: 1, appbar: 1, header: 1, tabbar: 1, avatar: 1, actionIcon: 1, iconBtn: 1, tabDot: 1, tabDotActive: 1, chart: 1, slider: 1, switch: 1, tag: 1, pillLong: 1, pillShort: 1, smallbtn: 1, tfmark: 1, key: 1, grabber: 1, progress: 1 };
+    // Roles rendered as a fixed square (icon-like); they take their token size.
+    const SQUARE = { avatar: 1, actionIcon: 1, iconBtn: 1, tabDot: 1, tabDotActive: 1, ghost: 1, appicon: 1 };
+
+    // Custom-drawn components (chart / slider / switch) build their own DOM.
+    function drawChart(el, node) {
+      el.style.position = "relative";
+      // Full-bleed charts extend past the screen's side padding to the edges.
+      if (node.bleedMargin) { el.style.marginLeft = (-node.bleedMargin) + "px"; el.style.marginRight = (-node.bleedMargin) + "px"; }
+      const pts = Array.isArray(node.points) && node.points.length ? node.points : [0.5, 0.5];
+      const stroke = node.lineColor || "#34C759";
+      const n = pts.length;
+      const coord = (v, i) => [(i / (n - 1)) * 100, (1 - v) * 100];
+      let d = "";
+      pts.forEach((v, i) => { const [px, py] = coord(v, i); d += (i ? "L" : "M") + px.toFixed(2) + " " + py.toFixed(2) + " "; });
+      const gid = "g" + Math.abs(hashStr(String(node.points))).toString(36);
+      let fill = "";
+      if (!node.lineOnly) {
+        const area = "M0 100 " + pts.map((v, i) => { const [px, py] = coord(v, i); return "L" + px.toFixed(2) + " " + py.toFixed(2); }).join(" ") + " L100 100 Z";
+        fill =
+          '<defs><linearGradient id="' + gid + '" x1="0" y1="0" x2="0" y2="1">' +
+          '<stop offset="0%" stop-color="' + stroke + '" stop-opacity="0.28"/>' +
+          '<stop offset="100%" stop-color="' + stroke + '" stop-opacity="0"/></linearGradient></defs>' +
+          '<path d="' + area + '" fill="url(#' + gid + ')"/>';
+      }
+      el.innerHTML =
+        '<svg viewBox="0 0 100 100" preserveAspectRatio="none" style="width:100%;height:100%;display:block">' +
+        fill +
+        '<path d="' + d.trim() + '" fill="none" stroke="' + stroke + '" stroke-width="2" vector-effect="non-scaling-stroke" stroke-linejoin="round"/>' +
+        '</svg>';
+    }
+    function hashStr(s) { let h = 0; for (let i = 0; i < s.length; i++) { h = (h * 31 + s.charCodeAt(i)) | 0; } return h; }
+
+    function drawSlider(el, node) {
+      el.style.position = "relative";
+      const trackH = node.trackH || 4, knob = node.knobSize || 20, pct = Math.max(0, Math.min(100, node.pct == null ? 50 : node.pct));
+      const track = document.createElement("div");
+      Object.assign(track.style, { position: "absolute", left: "0", right: "0", top: "50%", transform: "translateY(-50%)", height: trackH + "px", borderRadius: "999px", background: node.trackColor || "#ddd" });
+      const fill = document.createElement("div");
+      Object.assign(fill.style, { position: "absolute", left: "0", top: "50%", transform: "translateY(-50%)", width: pct + "%", height: trackH + "px", borderRadius: "999px", background: node.fillColor || "#0a84ff" });
+      const dot = document.createElement("div");
+      Object.assign(dot.style, { position: "absolute", left: "calc(" + pct + "% - " + (knob / 2) + "px)", top: "50%", transform: "translateY(-50%)", width: knob + "px", height: knob + "px", borderRadius: "50%", background: "#fff", boxShadow: "0 1px 4px rgba(0,0,0,.3)", border: "2px solid " + (node.fillColor || "#0a84ff") });
+      el.append(track, fill, dot);
+    }
+
+    function drawProgress(el, node) {
+      el.style.position = "relative";
+      const pct = Math.max(0, Math.min(100, node.pct == null ? 50 : node.pct));
+      const track = document.createElement("div");
+      Object.assign(track.style, { position: "absolute", inset: "0", borderRadius: "999px", background: node.trackColor || "#ddd" });
+      const fill = document.createElement("div");
+      Object.assign(fill.style, { position: "absolute", left: "0", top: "0", bottom: "0", width: pct + "%", borderRadius: "999px", background: node.fillColor || "#0a84ff" });
+      el.append(track, fill);
+    }
+
+    function drawSwitch(el, node) {
+      const w = node.width || 46, h = node.height || 28, knob = node.knobSize || h - 4, on = !!node.on;
+      Object.assign(el.style, { width: w + "px", height: h + "px", borderRadius: h + "px", position: "relative", background: on ? (node.onColor || "#34C759") : (node.offColor || "#ccc") });
+      const dot = document.createElement("div");
+      Object.assign(dot.style, { position: "absolute", top: "50%", transform: "translateY(-50%)", width: knob + "px", height: knob + "px", borderRadius: "50%", background: node.knobColor || "#fff", boxShadow: "0 1px 3px rgba(0,0,0,.3)", left: on ? "calc(100% - " + (knob + 2) + "px)" : "2px" });
+      el.appendChild(dot);
+    }
+
+    // --- Lightweight schema check (mirrors src/layout.js validateLayoutSpec) ---
+    function validate(spec) {
+      const errs = [];
+      if (!spec || typeof spec !== "object") return ["Spec must be an object."];
+      if (!spec.root || typeof spec.root !== "object") return ["Spec is missing a 'root' node."];
+      (function walk(n, path) {
+        if (!n || typeof n !== "object") { errs.push(path + ": node must be an object."); return; }
+        if (n.type !== "FRAME" && n.type !== "TEXT") errs.push(path + ': type must be "FRAME" or "TEXT".');
+        for (const k of ["x", "y", "width", "height"]) if (typeof n[k] !== "number") errs.push(path + ": " + k + " must be a number.");
+        if (n.type === "TEXT" && typeof n.characters !== "string") errs.push(path + ': TEXT needs "characters" string.');
+        if (n.type === "FRAME" && n.children) n.children.forEach((c, i) => walk(c, path + ".children[" + i + "]"));
+      })(spec.root, "root");
+      return errs;
+    }
+
+    function fillColor(node) {
+      const f = Array.isArray(node.fills) ? node.fills.find(x => x && x.type === "SOLID") : null;
+      return f ? f.color : "transparent";
+    }
+
+    // Build a DOM node for a spec node. `absolute` is true when the parent
+    // positions children absolutely (layout NONE / omitted).
+    function renderNode(node, absolute) {
+      const el = document.createElement("div");
+      const s = el.style;
+      const square = !!SQUARE[node.role];
+
+      if (absolute) {
+        // Parent positions children by absolute x/y with authored box sizes.
+        s.position = "absolute";
+        s.left = node.x + "px"; s.top = node.y + "px";
+        s.width = node.width + "px"; s.height = node.height + "px";
+      } else {
+        // Inside an auto-layout stack, let flexbox size children: `grow` fills
+        // the main axis equally, square roles take their fixed size, everything
+        // else hugs its content. Parents fill the cross axis via align: stretch.
+        s.flex = node.grow ? "1 1 0" : "0 0 auto";
+        s.minWidth = "0";
+        if (square || node.role === "tfmark") { s.width = node.width + "px"; s.height = node.height + "px"; }
+        else if (node.fixedW) s.width = node.fixedW + "px";
+      }
+      if (typeof node.opacity === "number") s.opacity = String(node.opacity);
+
+      if (node.type === "TEXT") {
+        el.className = "node-text";
+        el.textContent = node.characters || "";
+        s.fontSize = (node.fontSize || 16) + "px";
+        s.fontWeight = String(node.fontWeight || 400);
+        s.color = node.color || "#1d1d1f";
+        s.textAlign = TALIGN[node.textAlign] || "left";
+        s.lineHeight = "1.25";
+        if (absolute) s.height = node.height + "px";
+        return el;
+      }
+
+      // FRAME
+      s.background = fillColor(node);
+      if (Array.isArray(node.gradient)) s.background = "linear-gradient(180deg, " + node.gradient.join(", ") + ")";
+      if (node.cornerRadius) s.borderRadius = node.cornerRadius + "px";
+      if (node.role === "sheet") s.borderRadius = "22px 22px 0 0"; // rounded top only
+      if (node.stroke) s.border = (node.strokeWeight || 1) + "px solid " + node.stroke;
+
+      // Custom-drawn components.
+      if (node.role === "icon") {
+        s.width = node.width + "px"; s.height = node.height + "px";
+        el.style.color = node.iconColor || "currentColor";
+        if (node.flip) s.transform = "scaleX(-1)";
+        const svg = (typeof ICONS !== "undefined" && ICONS.has(node.icon)) ? ICONS.svg(node.icon) : null;
+        if (svg) el.innerHTML = svg;
+        else if (node.fallback) { el.textContent = node.fallback; el.style.textAlign = "center"; }
+        return el;
+      }
+      if (node.role === "chart") { if (!absolute) s.height = node.height + "px"; drawChart(el, node); return el; }
+      if (node.role === "progress") { if (!absolute) s.height = node.height + "px"; drawProgress(el, node); return el; }
+      if (node.role === "slider") { if (!absolute) s.height = node.height + "px"; drawSlider(el, node); return el; }
+      if (node.role === "switch") { s.flex = "0 0 auto"; drawSwitch(el, node); return el; }
+
+      const lay = node.layout || { mode: "NONE" };
+      const children = Array.isArray(node.children) ? node.children : [];
+      // Component roles keep a fixed platform height; layout containers hug
+      // their content (matching Figma auto-layout "hug"), so token-driven child
+      // height changes never clip a container.
+      const fixedHeight = !!FIXED_H[node.role];
+
+      if (lay.mode === "VERTICAL" || lay.mode === "HORIZONTAL") {
+        if (!absolute && fixedHeight) { s.height = node.height + "px"; s.overflow = "hidden"; }
+        s.display = "flex";
+        s.flexDirection = lay.mode === "VERTICAL" ? "column" : "row";
+        s.paddingTop = (lay.paddingTop || 0) + "px";
+        s.paddingRight = (lay.paddingRight || 0) + "px";
+        s.paddingBottom = (lay.paddingBottom || 0) + "px";
+        s.paddingLeft = (lay.paddingLeft || 0) + "px";
+        s.gap = (lay.itemSpacing || 0) + "px";
+        s.justifyContent = JUSTIFY[lay.primaryAxisAlignItems] || "flex-start";
+        s.alignItems = ALIGN[lay.counterAxisAlignItems] || "flex-start";
+        // Horizontally scrolling carousels: don't clip, let the row scroll.
+        if (node.scrollX) { s.overflowX = "auto"; s.overflowY = "hidden"; s.flexWrap = "nowrap"; }
+        children.forEach(c => el.appendChild(renderNode(c, false)));
+      } else {
+        if (!absolute) s.height = node.height + "px";
+        s.position = "relative";
+        s.overflow = "hidden";
+        children.forEach(c => el.appendChild(renderNode(c, true)));
+      }
+      return el;
+    }
+
+    const FONT_STACK = { Inter: "'Inter', sans-serif", Geist: "'Geist', sans-serif" };
+    function paint(screenEl, spec, targetW, landscape, fontChoice) {
+      const base = spec.device || { width: spec.root.width, height: spec.root.height };
+      // Landscape swaps the viewport; the content reflows into the wider, shorter
+      // screen (auto-layout stretches/hugs, so it adapts rather than rotating).
+      const dev = landscape ? { width: base.height, height: base.width } : base;
+      const scale = targetW / dev.width;
+      screenEl.style.width = Math.round(dev.width * scale) + "px";
+      screenEl.style.height = Math.round(dev.height * scale) + "px";
+      // Match the bezel's screen surface to the root fill (so dark themes don't
+      // show a white sliver at the rounded corners).
+      const bg = fillColor(spec.root);
+      if (Array.isArray(spec.root.gradient)) screenEl.style.background = "linear-gradient(180deg, " + spec.root.gradient.join(", ") + ")";
+      // A translucent scrim (bottom sheet) sits over white; anything else fills directly.
+      else screenEl.style.background = (bg === "transparent" || bg.indexOf("rgba") === 0) ? "#fff" : bg;
+      screenEl.innerHTML = "";
+
+      const canvas = document.createElement("div");
+      canvas.className = "canvas";
+      canvas.style.width = dev.width + "px";
+      canvas.style.height = dev.height + "px";
+      canvas.style.transform = "scale(" + scale + ")";
+      // Brand font override (Inter/Geist) or the platform's system stack.
+      const brand = FONT_STACK[fontChoice];
+      if (brand) canvas.style.fontFamily = brand;
+      else if (spec.fontFamily) canvas.style.fontFamily = spec.fontFamily;
+
+      // Root frame fills the canvas.
+      const root = renderNode(spec.root, false);
+      root.style.width = dev.width + "px";
+      root.style.height = dev.height + "px";
+      canvas.appendChild(root);
+      screenEl.appendChild(canvas);
+
+      // Faux status bar in the top safe area (time + signal/wifi/battery).
+      if (spec.safeTop && !landscape) {
+        const isSheet = spec.root && spec.root.sheet;
+        const onGradient = spec.root && Array.isArray(spec.root.gradient);
+        const color = (spec.theme === "dark" || isSheet || onGradient) ? "#ffffff" : "#0b0b0c";
+        const sb = document.createElement("div");
+        Object.assign(sb.style, {
+          position: "absolute", top: "0", left: "0", right: "0",
+          height: Math.round(Math.min(spec.safeTop, 48) * scale) + "px",
+          display: "flex", alignItems: "center", justifyContent: "space-between",
+          padding: "0 " + Math.round(24 * scale) + "px", color: color, zIndex: "30",
+          fontFamily: FONT_STACK[fontChoice] || spec.fontFamily || "inherit",
+          fontWeight: "600", fontSize: Math.round(14 * scale) + "px", pointerEvents: "none"
+        });
+        const time = document.createElement("div"); time.textContent = "9:41";
+        const icons = document.createElement("div");
+        Object.assign(icons.style, { display: "flex", alignItems: "center", gap: Math.round(5 * scale) + "px", color: color });
+        const ih = Math.round(13 * scale);
+        ["signal", "wifi", "battery"].forEach(n => {
+          const d = document.createElement("div");
+          d.style.height = ih + "px"; d.style.width = (n === "battery" ? Math.round(ih * 1.5) : ih) + "px";
+          if (typeof ICONS !== "undefined" && ICONS.has(n)) d.innerHTML = ICONS.svg(n);
+          icons.appendChild(d);
+        });
+        sb.append(time, icons);
+        screenEl.appendChild(sb);
+      }
+    }
+
+    // End-to-end crypto-exchange flow, modeled on WEEX (copy trading), Binance
+    // (breadth + Lite/Pro progressive disclosure) and Indian exchanges —
+    // CoinDCX (INR spot/futures), Mudrex (Coin Sets / SIP) and Delta (derivatives).
+    const OUTLINE_EXAMPLE = [
+      "screen Home",
+      "  appbar Koin · Lite | ⋯",
+      "  balance Portfolio value | ₹4,82,350 | +3.2% today",
+      "  actions Buy | Sell | Deposit | More",
+      "  segmented Lite | Pro",
+      "  banner 1% TDS on sells | KYC verified | INR wallet active",
+      "  heading Top movers",
+      "  asset BTC | Bitcoin | ₹54,90,000 | +2.4%",
+      "  asset ETH | Ethereum | ₹2,68,400 | -1.2%",
+      "  asset SOL | Solana | ₹12,650 | +6.8%",
+      "  tabbar Home | Markets | Trade | Earn | Wallet",
+      "",
+      "screen Markets",
+      "  header ‹ | Markets | ⌕",
+      "  segmented Spot | Futures | INR",
+      "  chips All | Gainers | Losers | Volume",
+      "  asset BTC | Bitcoin | ₹54,90,000 | +2.4%",
+      "  asset ETH | Ethereum | ₹2,68,400 | -1.2%",
+      "  asset SOL | Solana | ₹12,650 | +6.8%",
+      "  asset XRP | Ripple | ₹52.30 | +0.9%",
+      "  asset USDT | Tether | ₹89.10 | 0.0%",
+      "  tabbar Home | Markets | Trade | Earn | Wallet",
+      "",
+      "screen Explore",
+      "  title Explore",
+      "  carousel Trending Stocks | new",
+      "    tile XY100 | $29,871.01 | +0.85% | lg",
+      "    tile CL | $80.14 | +0.35% | lg",
+      "    tile SP500 | $7,478.00 | +1.02% | lg",
+      "  carousel Trending Perps | new",
+      "    tile BTC | $65,511.04 | +1.25%",
+      "    tile ETH | $1,674.88 | +0.89%",
+      "    tile SOL | $68.38 | +1.32%",
+      "    tile ZEC | $425.30 | +3.11%",
+      "  carousel Featured xStocks",
+      "    tile AAPLx | $228.52 | +0.74%",
+      "    tile TSLAx | $412.18 | +2.10%",
+      "    tile NVDAx | $150.19 | +0.23%",
+      "    tile MSFTx | $512.90 | +0.41%",
+      "  carousel Top Movers",
+      "    tile Humanity | $0.61 | +681.44%",
+      "    tile Beat | $5.98 | +428.07%",
+      "    tile Velvet | $0.53 | +40.95%",
+      "    tile Backpack | $0.40 | +31.92%",
+      "  tabbar Home | Markets | Trade | Earn | Wallet",
+      "",
+      "screen Coin",
+      "  header ‹ | BTC / INR | ☆",
+      "  balance Bitcoin | ₹54,90,000 | +2.4% (24h)",
+      "  chart +2.4%",
+      "  chips 1H | 1D | 1W | 1M | 1Y",
+      "  stats 24h High:₹55.9L | 24h Low:₹53.2L | Vol:₹1,240 Cr",
+      "  heading About Bitcoin",
+      "  body Decentralized digital currency. Market cap rank #1.",
+      "  row",
+      "    [ Sell ]",
+      "    [ Buy ]",
+      "",
+      "screen Asset",
+      "  chart +0.23% | bleed line",
+      "  quote NVDA | Nasdaq | $150.19 | +0.34 (+0.23%)",
+      "  timeframe 1D | 1W* | 1M | 3M | 1Y | All",
+      "  statbar 24h Vol:$1.72B | OI:$1.46B | Funding:0.0072%",
+      "  posdetail $205.12 | Long 2x | +$2.01 (4.0%) | $587.89 | 2,187.11 | 3,192.90",
+      "  stat Liquidation Price | $1,240.00",
+      "  buttons Add* | Close*",
+      "",
+      "screen Perps",
+      "  appbar Perps | info | user",
+      "  account $400.00 | +126% ($38.11) Today | $380.00 Available",
+      "  buttons Withdraw | Deposit*",
+      "  tabs Markets* | Orders | History | PnL",
+      "  position ETH | LONG 25x | $499.00 | +12.32% ($92.99) | 3,382.01 | 3,412.02 | 3,311.11",
+      "  position BTC | SHORT 5x | $240.00 | +1.91% ($22.73) | 72,819.62 | 74,188.11 | 69,910.83",
+      "  chips By Volume ▾",
+      "  asset BTC | $3.1B · 40x | $93,241.81 | +0.22%",
+      "  asset ETH | $1.7B · 25x | $3,141.92 | +3.85%",
+      "",
+      "screen Buy",
+      "  header ‹ | Buy Bitcoin | ⓘ",
+      "  orderform BTC | INR",
+      "  banner Est. fee ₹35 | 1% TDS ₹200 applies on sell",
+      "  stat You pay | ₹20,000",
+      "  stat You get | 0.00364 BTC",
+      "",
+      "screen Futures",
+      "  header ‹ | BTC-PERP · Pro | ⚙",
+      "  balance Mark price | ₹54,88,200 | -0.8%",
+      "  chart -0.8%",
+      "  chips 5x | 10x | 20x | 50x",
+      "  segmented Long | Short",
+      "  field Size (USDT)",
+      "  slider 20",
+      "  stat Margin | 120 USDT · Cross",
+      "  stat Est. liq. price | ₹49,20,000",
+      "  button Open Long · 10x",
+      "",
+      "screen Leverage | sheet",
+      "  heading Leverage",
+      "  stats Current Price:$2,981.11 | Liquidation at:$2,681.11",
+      "  bignum 20x",
+      "  slider 66",
+      "  buttons Save*",
+      "",
+      "screen TP-SL | sheet",
+      "  segmented % PnL | $ Price",
+      "  label Take Profit",
+      "  field %",
+      "  stat Approximate Profit | $0",
+      "  label Stop Loss",
+      "  field %",
+      "  stat Approximate Loss | $0",
+      "  buttons Save*",
+      "  chips 5% | 10% | 25% | MAX",
+      "  keypad",
+      "",
+      "screen Set Limit",
+      "  header X | Set Limit Price | ",
+      "  bignum $6,100 | -2.12%",
+      "  buttons Set Limit Price*",
+      "  chips -1% | -2% | -5% | ↕ %",
+      "  keypad",
+      "",
+      "screen Receipt | sheet",
+      "  receipthead Kalshi | Sell $99.50 of Kalshi | Short",
+      "  stat Based on | Valuation",
+      "  stat Order type | Close Short",
+      "  stat Contracts | 199",
+      "  stat Price per contract | $0.50",
+      "  stat Est. P/L | +$0.00 (+0%)",
+      "  sharebtn Share",
+      "",
+      "screen Upsell",
+      "  header ‹ |  | ",
+      "  receipthead R | People have also traded these assets | ",
+      "  grid",
+      "    cardbig Bitcoin | BTC | $1.32T | +2.4%",
+      "    cardbig Ethereum | ETH | $402B | +1.1%",
+      "    cardbig Solana | SOL | $71B | +6.8%",
+      "    cardbig Polymarket | POLY | $2.19B | +3.1% | blue",
+      "  buttons Continue*",
+      "",
+      "screen Level | gradient",
+      "  back Back",
+      "  level 8 | +2% FEE CASHBACK | 45",
+      "  infocard trade | Trading | Earn points based on your trading activity | Total volume | $44,213",
+      "",
+      "screen Earn",
+      "  header ‹ | Earn | ⌕",
+      "  segmented Coin Sets | Staking | SIP",
+      "  banner Auto-invest weekly with SIP | from ₹100",
+      "  heading Popular Coin Sets",
+      "  asset TOP | Top 10 Basket | 14.2% APY | +8.1%",
+      "  asset DEFI | DeFi Leaders | 21.5% APY | +12.4%",
+      "  asset BLUE | Blue Chips | 9.8% APY | +4.2%",
+      "  button Start a SIP",
+      "  tabbar Home | Markets | Trade | Earn | Wallet",
+      "",
+      "screen Bonus",
+      "  header ‹ | Rewards | ⌕",
+      "  balance Bonus balance | ₹1,250 | Ready to claim",
+      "  banner Refer & earn ₹200 per friend | Limited time",
+      "  heading Earn more",
+      "  stat Complete KYC | +₹100",
+      "  stat First deposit | +₹150",
+      "  stat First trade | +₹50",
+      "  chips Daily | Weekly | Referral",
+      "  button Claim ₹1,250",
+      "  tabbar Home | Markets | Trade | Earn | Wallet",
+      "",
+      "screen Wallet",
+      "  header ‹ | Wallet | ⋯",
+      "  balance Total balance | ₹4,82,350 | +3.2%",
+      "  actions Deposit | Withdraw | Transfer | History",
+      "  stat INR balance | ₹80,000",
+      "  divider",
+      "  heading Holdings",
+      "  asset BTC | Bitcoin | ₹2,74,500 | +2.4%",
+      "  asset ETH | Ethereum | ₹1,34,200 | -1.2%",
+      "  asset USDT | Tether | ₹93,650 | 0.0%",
+      "  tabbar Home | Markets | Trade | Earn | Wallet",
+      "",
+      "screen Deposit",
+      "  header ‹ | Add money | ⓘ",
+      "  balance Enter amount | ₹20,000 | UPI · instant",
+      "  chips ₹1,000 | ₹5,000 | ₹25,000 | Max",
+      "  heading Payment method",
+      "  switch UPI (recommended) | on",
+      "  switch IMPS / NEFT | off",
+      "  switch Bank transfer | off",
+      "  banner Deposits are free | Funds credited instantly",
+      "  button Add ₹20,000"
+    ].join("\n");
+
+    const input = document.getElementById("input");
+    const outline = document.getElementById("outline");
+    const status = document.getElementById("status");
+    const screenbar = document.getElementById("screenbar");
+    let mode = "describe"; // "describe" | "json"
+    let screens = [];      // [{ name, spec }]
+    let active = 0;
+
+    function setStatus(msg, kind) { status.textContent = msg; status.className = "status " + (kind || ""); }
+
+    function buildScreenbar() {
+      screenbar.innerHTML = "";
+      if (screens.length < 2) return;
+      screens.forEach((sc, i) => {
+        const b = document.createElement("button");
+        b.className = "schip" + (i === active ? " active" : "");
+        b.textContent = sc.name;
+        b.addEventListener("click", () => { active = i; paintActive(); });
+        screenbar.appendChild(b);
+      });
+    }
+
+    function paintActive() {
+      const entry = screens[active] || screens[0];
+      if (!entry) return;
+      const spec = entry.spec;
+      const errs = validate(spec);
+      if (errs.length) { setStatus("Schema issues:\n• " + errs.slice(0, 8).join("\n• "), "err"); return; }
+      const useGuidelines = document.getElementById("guidelines").checked;
+      const land = document.getElementById("landscape").checked;
+      const theme = document.getElementById("dark").checked ? "dark" : "light";
+      try {
+        const tw = land ? LANDSCAPE_W : IOS_W;
+        const fontChoice = document.getElementById("font").value;
+        const iosSpec = useGuidelines ? applyPlatformDefaults(spec, "ios", theme) : spec;
+        const androidSpec = useGuidelines ? applyPlatformDefaults(spec, "android", theme) : spec;
+        paint(document.getElementById("iosScreen"), iosSpec, tw, land, fontChoice);
+        paint(document.getElementById("androidScreen"), androidSpec, tw, land, fontChoice);
+        document.querySelector(".iphone").classList.toggle("land", land);
+        document.querySelector(".android").classList.toggle("land", land);
+        const orient = land ? " · landscape" : "";
+        const dk = theme === "dark" ? " · dark" : "";
+        document.getElementById("iosLabel").textContent = (useGuidelines ? "iPhone · Apple HIG" : "iPhone · iOS") + orient + dk;
+        document.getElementById("androidLabel").textContent = (useGuidelines ? "Pixel · Material 3" : "Pixel · Android") + orient + dk;
+        buildScreenbar();
+        if (mode === "describe") input.value = JSON.stringify(spec, null, 2);
+        const many = screens.length > 1 ? " · screen " + (active + 1) + "/" + screens.length : "";
+        setStatus("Rendered “" + (spec.name || "screen") + "”" + many + (useGuidelines ? " · guidelines applied" : ""), "ok");
+      } catch (e) { setStatus("Render error: " + e.message, "err"); }
+    }
+
+    function render() {
+      if (mode === "describe") {
+        try { screens = specsFromOutline(outline.value); }
+        catch (e) { setStatus("Outline error: " + e.message, "err"); return; }
+      } else {
+        let spec;
+        try { spec = JSON.parse(input.value); }
+        catch (e) { setStatus("JSON parse error: " + e.message, "err"); return; }
+        screens = [{ name: spec.name || "Screen", spec }];
+      }
+      if (active >= screens.length) active = 0;
+      paintActive();
+    }
+
+    const tabDescribe = document.getElementById("tabDescribe");
+    const tabJson = document.getElementById("tabJson");
+    const btnExample = document.getElementById("loadExample");
+    const btnFormat = document.getElementById("format");
+
+    function setMode(next) {
+      mode = next;
+      const describing = mode === "describe";
+      tabDescribe.classList.toggle("active", describing);
+      tabJson.classList.toggle("active", !describing);
+      outline.hidden = !describing;
+      input.hidden = describing;
+      btnFormat.hidden = describing;         // formatting only makes sense for JSON
+      render();
+    }
+
+    tabDescribe.addEventListener("click", () => setMode("describe"));
+    // In describe mode the active screen's JSON is already mirrored into #input
+    // by paintActive(), so switching to the JSON tab just shows that screen.
+    tabJson.addEventListener("click", () => setMode("json"));
+
+    document.getElementById("render").addEventListener("click", render);
+    document.getElementById("guidelines").addEventListener("change", render);
+    document.getElementById("landscape").addEventListener("change", () => paintActive());
+    document.getElementById("dark").addEventListener("change", () => paintActive());
+    document.getElementById("font").addEventListener("change", () => paintActive());
+    btnExample.addEventListener("click", () => {
+      if (mode === "describe") outline.value = OUTLINE_EXAMPLE;
+      else input.value = JSON.stringify(EXAMPLE, null, 2);
+      render();
+    });
+    btnFormat.addEventListener("click", () => {
+      try { input.value = JSON.stringify(JSON.parse(input.value), null, 2); setStatus("Formatted.", "ok"); }
+      catch (e) { setStatus("Cannot format: " + e.message, "err"); }
+    });
+
+    // Re-render shortly after typing stops, in whichever editor is active.
+    let t;
+    const onType = () => { clearTimeout(t); t = setTimeout(render, 500); };
+    input.addEventListener("input", onType);
+    outline.addEventListener("input", onType);
+
+    outline.value = OUTLINE_EXAMPLE;
+    input.value = JSON.stringify(EXAMPLE, null, 2);
+    render();
+  </script>
+</body>
+</html>
