@@ -33,7 +33,7 @@
     switch: 1, banner: 1, tag: 1, trader: 1, orderform: 1, iconbtn: 1, quote: 1, timeframe: 1,
     account: 1, buttons: 1, tabs: 1, statbar: 1, position: 1, posdetail: 1, tile: 1, dapp: 1,
     keypad: 1, bignum: 1, receipthead: 1, sharebtn: 1, cardbig: 1,
-    back: 1, progress: 1, level: 1
+    back: 1, progress: 1, level: 1, infocard: 1
   };
 
   const TEXT_HEIGHT = {
@@ -292,6 +292,14 @@
         const pr = frame("progress", "NONE", {}, []); pr.pct = isNaN(pct) ? 45 : pct; pr.fixedW = 220; pr.fillColor = white; pr.trackColor = "rgba(255,255,255,0.25)"; pr.barH = 10;
         const labels = frame("group", "VERTICAL", { itemSpacing: 4, primaryAxisAlignItems: "CENTER", counterAxisAlignItems: "CENTER" }, [txtC("caption", "NEXT REWARD", faint, "CENTER"), txtC("value", f[1] || "", white, "CENTER")]);
         return frame("group", "VERTICAL", { itemSpacing: 18, primaryAxisAlignItems: "CENTER", counterAxisAlignItems: "CENTER" }, [emblem, pr, labels]);
+      }
+      case "infocard": {
+        // icon | title | subtitle | statLabel | statValue
+        const head = frame("group", "HORIZONTAL", { itemSpacing: 8, counterAxisAlignItems: "CENTER" }, [iconNode(f[0] || "trade", 22, "onBackground"), txt("heading", f[1] || "")]);
+        const kids = [head];
+        if (f[2]) kids.push(txt("subtitle", f[2]));
+        if (f[3] || f[4]) kids.push(buildComposite("stat", (f[3] || "") + " | " + (f[4] || "")));
+        return frame("card", "VERTICAL", { paddingTop: 16, paddingBottom: 16, paddingLeft: 16, paddingRight: 16, itemSpacing: 10, counterAxisAlignItems: "STRETCH" }, kids);
       }
       case "keypad": {
         const key = (label) => grow(frame("key", "HORIZONTAL", { primaryAxisAlignItems: "CENTER", counterAxisAlignItems: "CENTER" }, [txt("key", label, "CENTER")]));
