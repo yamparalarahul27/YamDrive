@@ -33,7 +33,8 @@
     switch: 1, banner: 1, tag: 1, trader: 1, orderform: 1, iconbtn: 1, quote: 1, timeframe: 1,
     account: 1, buttons: 1, tabs: 1, statbar: 1, position: 1, posdetail: 1, tile: 1, dapp: 1,
     keypad: 1, bignum: 1, receipthead: 1, sharebtn: 1, cardbig: 1,
-    back: 1, progress: 1, level: 1, infocard: 1, sheethead: 1, profilecard: 1
+    back: 1, progress: 1, level: 1, infocard: 1, sheethead: 1, profilecard: 1,
+    permhead: 1, notifyart: 1, cta: 1
   };
 
   const TEXT_HEIGHT = {
@@ -231,6 +232,34 @@
       }
       case "sheethead":
         return frame("group", "HORIZONTAL", { primaryAxisAlignItems: "SPACE_BETWEEN", counterAxisAlignItems: "CENTER" }, [txt("heading", f[0] || ""), iconBtn("x")]);
+      case "permhead": {
+        // icon | title | subtitle — centered permission/onboarding header
+        return frame("group", "VERTICAL", { itemSpacing: 14, counterAxisAlignItems: "STRETCH" }, [
+          frame("group", "HORIZONTAL", { primaryAxisAlignItems: "CENTER" }, [iconNode(f[0] || "bell", 40, "onBackgroundSecondary")]),
+          txt("title", f[1] || "", "CENTER"),
+          txt("subtitle", f[2] || "", "CENTER")
+        ]);
+      }
+      case "notifyart": {
+        // title | time — a notification toast over a faded app grid (illustration)
+        const line = () => { const b = frame("bar", "NONE", {}, []); b.fixedH = 8; b.cornerRadius = 4; b.fills = [{ type: "SOLID", color: "#E9E9EE" }]; return b; };
+        const tIcon = frame("appsq", "NONE", {}, []); tIcon.fixedW = 34; tIcon.fixedH = 34; tIcon.cornerRadius = 9; tIcon.fills = [{ type: "SOLID", color: "#DADAE0" }];
+        const tText = grow(frame("group", "VERTICAL", { itemSpacing: 8, counterAxisAlignItems: "STRETCH" }, [
+          frame("group", "HORIZONTAL", { primaryAxisAlignItems: "SPACE_BETWEEN", counterAxisAlignItems: "CENTER" }, [txtC("value", f[0] || "Time to wind down", "#1D1D1F"), txtC("caption", f[1] || "3:51 PM", "#9A9AA0", "RIGHT")]),
+          line(), line()
+        ]));
+        const toast = frame("idcard", "HORIZONTAL", { paddingTop: 12, paddingBottom: 12, paddingLeft: 12, paddingRight: 12, itemSpacing: 10, counterAxisAlignItems: "MIN" }, [tIcon, tText]);
+        toast.fills = [{ type: "SOLID", color: "#FFFFFF" }]; toast.cornerRadius = 18; toast.stroke = "#ECECEF"; toast.strokeWeight = 1;
+        const sq = () => { const s = frame("appsq", "NONE", {}, []); s.fixedH = 58; s.cornerRadius = 14; s.fills = [{ type: "SOLID", color: "#FFFFFF" }]; s.opacity = 0.7; return grow(s); };
+        const row3 = () => frame("group", "HORIZONTAL", { itemSpacing: 14, counterAxisAlignItems: "STRETCH" }, [sq(), sq(), sq()]);
+        const grid = frame("group", "VERTICAL", { itemSpacing: 14, counterAxisAlignItems: "STRETCH" }, [row3(), row3(), row3(), row3()]); grid.opacity = 0.9;
+        return frame("group", "VERTICAL", { itemSpacing: 14, counterAxisAlignItems: "STRETCH" }, [toast, grid]);
+      }
+      case "cta": {
+        const b = frame("cta", "HORIZONTAL", { primaryAxisAlignItems: "CENTER", counterAxisAlignItems: "CENTER" }, [txtC("buttonText", f[0] || "", "#FFFFFF", "CENTER")]);
+        b.fills = [{ type: "SOLID", color: "#111214" }]; b.cornerRadius = 30; b.fixedH = 58;
+        return b;
+      }
       case "profilecard": {
         // name | tag1 | tag2  — lanyard/ID-badge card (bespoke olive styling)
         const ink = "#3E4A2A", green = "#8FA25B", pillBd = "#E1E4DA", slotC = "#E9EBE3";
@@ -526,9 +555,10 @@
     return node.height;
   }
 
-  function finishScreen(rootNode, name, sheet, gradient) {
+  function finishScreen(rootNode, name, sheet, gradient, bg) {
     rootNode.role = "screen";
     if (gradient && !sheet) rootNode.gradient = ["#3E8FFF", "#7FB5FF"]; // top → bottom blue
+    if (bg && !sheet && !gradient) rootNode.fills = [{ type: "SOLID", color: bg }]; // custom page background
     if (sheet) {
       // Bottom sheet: a dimmed scrim with a rounded card anchored to the bottom.
       const content = rootNode.children || [];
@@ -568,13 +598,14 @@
         const flags = cf.slice(1);
         const sheet = flags.some((x) => /sheet/i.test(x));
         const gradient = flags.some((x) => /gradient/i.test(x));
-        cur = { name: cf[0] || "Screen", node: n, sheet, gradient };
+        const bg = flags.find((x) => /^#[0-9a-fA-F]{3,8}$/.test(x)) || null;
+        cur = { name: cf[0] || "Screen", node: n, sheet, gradient, bg };
         groups.push(cur);
       } else if (cur) cur.node.children.push(n);
       else stray.push(n);
     }
     if (stray.length && groups.length) groups[0].node.children = stray.concat(groups[0].node.children);
-    return groups.map((g) => ({ name: g.name, spec: finishScreen(toSpecNode(g.node), g.name, g.sheet, g.gradient) }));
+    return groups.map((g) => ({ name: g.name, spec: finishScreen(toSpecNode(g.node), g.name, g.sheet, g.gradient, g.bg) }));
   }
 
   function specFromOutline(text) { const list = specsFromOutline(text); return Array.isArray(list) && list.length ? (list[0].spec || list[0]) : null; }

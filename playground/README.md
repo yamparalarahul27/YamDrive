@@ -149,6 +149,11 @@ carousel Trending Stocks | new
 | `stat Status \| Confirmed \| ok` | key/value with a green ✓ (use `ok`), or an icon name as the 3rd field |
 | `sheethead Withdraw` | sheet header: title + close (×) |
 | `profilecard Markscout \| ALPHA USER \| #54801` | lanyard/ID-badge card: logo, member seal, serif wordmark, outlined pills, dotted divider, mono info, QR |
+| `permhead bell \| Title \| Subtitle` | centered onboarding header: icon + title + subtitle |
+| `notifyart Time to wind down \| 3:51 PM` | notification-toast-over-faded-app-grid illustration |
+| `cta Enable notifications` | full-width black pill button |
+
+A screen can take a **custom background color** as a flag — `screen Notify | #F3F2F8`.
 | `banner 1% TDS on sells \| KYC verified` | tinted info banner (`\|` joins with ·) |
 | `tag 10x` | small pill badge |
 | `avatar BTC` | circular initials badge |
