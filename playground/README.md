@@ -146,6 +146,8 @@ carousel Trending Stocks | new
 | `switch UPI \| on` | labeled row with an on/off toggle |
 | `stats High:64,900 \| Low:61,200 \| Vol:1.2B` | row of stat tiles (label + value) |
 | `stat Available \| ₹80,000` | single key/value row (spaced apart) |
+| `stat Status \| Confirmed \| ok` | key/value with a green ✓ (use `ok`), or an icon name as the 3rd field |
+| `sheethead Withdraw` | sheet header: title + close (×) |
 | `banner 1% TDS on sells \| KYC verified` | tinted info banner (`\|` joins with ·) |
 | `tag 10x` | small pill badge |
 | `avatar BTC` | circular initials badge |

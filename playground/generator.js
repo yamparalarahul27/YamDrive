@@ -33,7 +33,7 @@
     switch: 1, banner: 1, tag: 1, trader: 1, orderform: 1, iconbtn: 1, quote: 1, timeframe: 1,
     account: 1, buttons: 1, tabs: 1, statbar: 1, position: 1, posdetail: 1, tile: 1, dapp: 1,
     keypad: 1, bignum: 1, receipthead: 1, sharebtn: 1, cardbig: 1,
-    back: 1, progress: 1, level: 1, infocard: 1
+    back: 1, progress: 1, level: 1, infocard: 1, sheethead: 1
   };
 
   const TEXT_HEIGHT = {
@@ -215,8 +215,20 @@
         let label, val;
         if (f.length >= 2) { label = f[0]; val = f[1]; }
         else { const c = (f[0] || "").indexOf(":"); label = c >= 0 ? f[0].slice(0, c).trim() : f[0]; val = c >= 0 ? f[0].slice(c + 1).trim() : ""; }
-        return frame("group", "HORIZONTAL", { paddingTop: 4, paddingBottom: 4, primaryAxisAlignItems: "SPACE_BETWEEN", counterAxisAlignItems: "CENTER" }, [txt("caption", label || ""), txt("value", val || "", "RIGHT")]);
+        // Optional 3rd field: "ok"/"confirmed" → green check + green value; else an icon name.
+        const flag = (f[2] || "").trim().toLowerCase();
+        let valNode;
+        if (/^(ok|confirmed|success|done)$/.test(flag)) {
+          valNode = frame("group", "HORIZONTAL", { itemSpacing: 5, counterAxisAlignItems: "CENTER" }, [iconNode("check-circle", 15, "#2FBF71"), txtC("value", val || "", "#2FBF71")]);
+        } else if (flag) {
+          valNode = frame("group", "HORIZONTAL", { itemSpacing: 5, counterAxisAlignItems: "CENTER" }, [iconNode(flag, 15, "onBackground", ""), txt("value", val || "", "RIGHT")]);
+        } else {
+          valNode = txt("value", val || "", "RIGHT");
+        }
+        return frame("group", "HORIZONTAL", { paddingTop: 4, paddingBottom: 4, primaryAxisAlignItems: "SPACE_BETWEEN", counterAxisAlignItems: "CENTER" }, [txt("caption", label || ""), valNode]);
       }
+      case "sheethead":
+        return frame("group", "HORIZONTAL", { primaryAxisAlignItems: "SPACE_BETWEEN", counterAxisAlignItems: "CENTER" }, [txt("heading", f[0] || ""), iconBtn("x")]);
       case "slider": { const p = parseInt(f[0], 10); const s = frame("slider", "NONE", {}, []); s.pct = isNaN(p) ? 50 : Math.max(0, Math.min(100, p)); return s; }
       case "switch": {
         const on = /^(on|true|yes|1)$/i.test((f[1] || "").trim());
