@@ -555,23 +555,56 @@
     return node.height;
   }
 
+  // --- Semantic rhythm ---------------------------------------------------------
+  // Context-aware gaps between siblings instead of one flat itemSpacing:
+  // related content sits tight (heading→content 8, list rows 8), sections
+  // separate wide (→heading 24), nav bars get room (20). Gaps are inserted as
+  // real spacer frames so the emitted layout.json stays schema-pure, and an
+  // authored `spacer` line always wins (no auto-gap next to it).
+  function gapBetween(prev, next) {
+    if (!prev || !next) return 0;
+    if (prev.role === "spacer" || next.role === "spacer") return 0;
+    const prevText = prev.type === "TEXT" ? prev.role : null;
+    const nextText = next.type === "TEXT" ? next.role : null;
+    if (prev.role === "appbar" || prev.role === "header") return 20;
+    if (nextText === "heading" || nextText === "title") return 24; // section break
+    if (prevText === "heading" || prevText === "title" || prevText === "subtitle" || prevText === "caption") return 8;
+    if (prev.role === "listrow" && next.role === "listrow") return 8;
+    return 16;
+  }
+  function rhythmize(children) {
+    const out = [];
+    for (let i = 0; i < children.length; i++) {
+      if (i > 0) {
+        const g = gapBetween(children[i - 1], children[i]);
+        if (g > 0) { const sp = frame("spacer", "NONE", {}, []); sp.spacerSize = g; sp.name = "·gap"; out.push(sp); }
+      }
+      out.push(children[i]);
+    }
+    return out;
+  }
+
   function finishScreen(rootNode, name, sheet, gradient, bg) {
     rootNode.role = "screen";
     if (gradient && !sheet) rootNode.gradient = ["#3E8FFF", "#7FB5FF"]; // top → bottom blue
     if (bg && !sheet && !gradient) rootNode.fills = [{ type: "SOLID", color: bg }]; // custom page background
     if (sheet) {
       // Bottom sheet: a dimmed scrim with a rounded card anchored to the bottom.
-      const content = rootNode.children || [];
+      const content = rhythmize(rootNode.children || []);
       const grabber = frame("grabber", "NONE", {}, []); grabber.fixedW = 40;
       const handle = frame("group", "HORIZONTAL", { primaryAxisAlignItems: "CENTER" }, [grabber]);
-      const card = frame("sheet", "VERTICAL", { paddingTop: 14, paddingBottom: 24, paddingLeft: 20, paddingRight: 20, itemSpacing: 16, counterAxisAlignItems: "STRETCH" }, [handle].concat(content));
+      if (content.length) { const sp = frame("spacer", "NONE", {}, []); sp.spacerSize = 16; content.unshift(sp); }
+      const card = frame("sheet", "VERTICAL", { paddingTop: 14, paddingBottom: 24, paddingLeft: 20, paddingRight: 20, itemSpacing: 0, counterAxisAlignItems: "STRETCH" }, [handle].concat(content));
       rootNode.children = [card];
       rootNode.sheet = true; // scrim: skip safe-area padding in tokens
       rootNode.layout = { mode: "VERTICAL", paddingTop: 0, paddingBottom: 0, itemSpacing: 0, primaryAxisAlignItems: "MAX", counterAxisAlignItems: "STRETCH" };
       rootNode.fills = [{ type: "SOLID", color: "rgba(0,0,0,0.45)" }]; // scrim (pre-set so tokens keep it)
     } else {
       // Leave top/bottom padding for tokens to fill with safe-area insets.
-      rootNode.layout = Object.assign({ mode: "VERTICAL", itemSpacing: SPACING, primaryAxisAlignItems: "MIN", counterAxisAlignItems: "STRETCH" }, rootNode.layout);
+      // Rhythm replaces the flat itemSpacing with per-pair semantic gaps.
+      rootNode.children = rhythmize(rootNode.children || []);
+      rootNode.layout = Object.assign({ mode: "VERTICAL", primaryAxisAlignItems: "MIN", counterAxisAlignItems: "STRETCH" }, rootNode.layout);
+      rootNode.layout.itemSpacing = 0;
       delete rootNode.layout.paddingLeft; delete rootNode.layout.paddingRight;
       delete rootNode.layout.paddingTop; delete rootNode.layout.paddingBottom;
     }
