@@ -219,14 +219,31 @@
     return pal[roleOrHex] || roleOrHex; // pass through raw hex
   }
 
+  // Rough wrapped-line estimate (avg glyph ≈ 0.52 × fontSize) so block heights
+  // grow with the platform's real type size instead of a hardcoded px table.
+  function estimateLines(text, fontSize, width) {
+    const s = String(text == null ? "" : text);
+    if (!s || !width || width <= 0) return 1;
+    const perLine = Math.max(4, Math.floor(width / (fontSize * 0.52)));
+    return Math.max(1, Math.ceil(s.length / perLine));
+  }
+
   // Apply a TEXT node's role. Tagging a role means "use this platform's type
   // scale", so font size/weight follow the scale; an explicit color still wins.
+  // Metrics are derived from the scale: line-height = 1.3 × fontSize, block
+  // height = lines × line-height — so text never clips on either platform.
   function styleText(node, t, pal) {
     const scale = node.role && t.type[node.role];
-    if (!scale) return;
+    if (!scale) {
+      if (node.fontSize && node.lineHeight == null) node.lineHeight = Math.round(node.fontSize * 1.3);
+      return;
+    }
     node.fontSize = scale.fontSize;
     node.fontWeight = scale.fontWeight;
     if (node.color == null) node.color = resolveColor(pal, scale.color);
+    const lh = Math.round(scale.fontSize * 1.3);
+    node.lineHeight = lh;
+    node.height = lh * estimateLines(node.characters, node.fontSize, node.width);
   }
 
   // Apply a FRAME's role. Component metrics (height, radius) are the guideline

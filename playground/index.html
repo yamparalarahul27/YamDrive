@@ -306,7 +306,7 @@
         s.fontWeight = String(node.fontWeight || 400);
         s.color = node.color || "#1d1d1f";
         s.textAlign = TALIGN[node.textAlign] || "left";
-        s.lineHeight = "1.25";
+        s.lineHeight = node.lineHeight ? node.lineHeight + "px" : "1.25";
         if (node.fontFamily) s.fontFamily = node.fontFamily;
         if (absolute) s.height = node.height + "px";
         return el;
