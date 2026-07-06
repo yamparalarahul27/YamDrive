@@ -57,7 +57,10 @@
     .status { padding: 8px 18px; font-family: var(--mono); font-size: 11px; border-top: 1px solid var(--line); min-height: 34px; }
     .status.ok { color: #1a7f37; }
     .status.err { color: #d1242f; white-space: pre-wrap; }
-    @media (prefers-color-scheme: dark) { .status.ok { color: #3fb950; } .status.err { color: #f85149; } }
+    .lint { padding: 6px 18px 10px; font-family: var(--mono); font-size: 11px; border-top: 1px solid var(--line); color: #b25e00; white-space: pre-wrap; }
+    .lint:empty { display: none; }
+    .lint.ok { color: #1a7f37; }
+    @media (prefers-color-scheme: dark) { .status.ok { color: #3fb950; } .status.err { color: #f85149; } .lint { color: #e3963e; } .lint.ok { color: #3fb950; } }
 
     /* --- Stage --- */
     .stage { background: var(--stage); overflow: auto; padding: 28px 40px 40px; display: flex; flex-direction: column; align-items: center; gap: 22px; }
@@ -115,6 +118,7 @@
     <textarea id="outline" spellcheck="false" autocomplete="off" placeholder="screen Sign in&#10;  title Welcome back&#10;  field Email address&#10;  button Sign in"></textarea>
     <textarea id="input" spellcheck="false" autocomplete="off" hidden></textarea>
     <div class="status" id="status"></div>
+    <div class="lint" id="lint"></div>
   </section>
 
   <section class="stage" id="stage">
@@ -680,6 +684,57 @@
       });
     }
 
+    // --- Design lint: guideline checks so you don't have to eyeball them ------
+    // Colors/contrast intentionally unchecked (B&W shades are fine by design).
+    const TAP_ROLES = { button: 1, buttonSecondary: 1, field: 1, cta: 1 };
+    function runLint(iosSpec, androidSpec) {
+      const issues = [];
+      const walk = (n, cb) => { if (!n) return; cb(n); (n.children || []).forEach(c => walk(c, cb)); };
+
+      // 1. Minimum tap targets, per platform guideline.
+      [["iOS", iosSpec, 44], ["Android", androidSpec, 48]].forEach(([label, spec, fallbackMin]) => {
+        if (!spec || !spec.root) return;
+        let min = fallbackMin;
+        try { min = MOBILE_TOKENS[spec.platform].metrics.tapTarget || fallbackMin; } catch (e) {}
+        const seen = {};
+        walk(spec.root, (n) => {
+          if (n.type === "FRAME" && TAP_ROLES[n.role] && typeof n.height === "number" && n.height < min) {
+            const k = n.role + ":" + n.height;
+            if (!seen[k]) { seen[k] = 1; issues.push("⚠ " + label + ": " + n.role + " is " + n.height + "pt — below the " + min + "pt tap target"); }
+          }
+        });
+      });
+
+      // 2. Odd spacing values (off the 2pt grid) — authored spacers + paddings.
+      let odd = 0;
+      if (iosSpec && iosSpec.root) walk(iosSpec.root, (n) => {
+        if (n.role === "spacer" && typeof n.height === "number" && n.height % 2 !== 0) odd++;
+        const l = n.layout || {};
+        // Screen top/bottom carry safe-area insets (59/34 etc.) — not authored.
+        const keys = n.role === "screen" ? ["paddingLeft", "paddingRight", "itemSpacing"]
+          : ["paddingTop", "paddingBottom", "paddingLeft", "paddingRight", "itemSpacing"];
+        keys.forEach(k => { if (typeof l[k] === "number" && l[k] % 2 !== 0) odd++; });
+      });
+      if (odd) issues.push("⚠ " + odd + " spacing value(s) off the 2pt grid");
+
+      // 3. Rendered checks on the iOS canvas: screen overflow + clipped content.
+      const canvas = document.querySelector("#iosScreen .canvas");
+      if (canvas && canvas.firstChild && iosSpec) {
+        const devH = (iosSpec.device && iosSpec.device.height) || 852;
+        const contentH = canvas.firstChild.scrollHeight;
+        if (contentH > devH + 2) issues.push("ℹ content " + Math.round(contentH) + "pt exceeds the " + devH + "pt screen — bottom will scroll/clip");
+        let clipped = 0;
+        canvas.querySelectorAll(".node-text").forEach(t => {
+          if (t.scrollWidth > t.clientWidth + 2 || t.scrollHeight > t.clientHeight + 2) clipped++;
+        });
+        canvas.querySelectorAll("div").forEach(d => {
+          if (d.style.overflow === "hidden" && d.scrollHeight > d.clientHeight + 2) clipped++;
+        });
+        if (clipped) issues.push("⚠ " + clipped + " element(s) clipped/truncated");
+      }
+      return issues;
+    }
+
     function paintActive() {
       const entry = screens[active] || screens[0];
       if (!entry) return;
@@ -706,6 +761,10 @@
         if (mode === "describe") input.value = JSON.stringify(spec, null, 2);
         const many = screens.length > 1 ? " · screen " + (active + 1) + "/" + screens.length : "";
         setStatus("Rendered “" + (spec.name || "screen") + "”" + many + (useGuidelines ? " · guidelines applied" : ""), "ok");
+        const lintEl = document.getElementById("lint");
+        const found = runLint(iosSpec, androidSpec);
+        lintEl.className = "lint" + (found.length ? "" : " ok");
+        lintEl.textContent = found.length ? found.join("\n") : "✓ lint: tap targets, spacing grid, overflow, clipping — all OK";
       } catch (e) { setStatus("Render error: " + e.message, "err"); }
     }
 

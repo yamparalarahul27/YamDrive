@@ -37,6 +37,19 @@ is drawn in the top zone, so content clears the Dynamic Island / status bar and
 the home indicator. Bottom sheets add the bottom inset to their card; full-bleed
 charts still extend to the horizontal edges.
 
+**Auto metrics** — you describe structure; the system supplies the rest:
+text line-heights and block heights derive from each platform's type scale
+(estimated wrapped lines, so text never clips), and spacing uses a **semantic
+rhythm engine** instead of one flat gap — heading→content sits tight (8),
+sections separate wide (24), nav bars get room (20), list rows stack close (8),
+all on the 4pt grid. An authored `spacer` line always wins over auto-gaps.
+
+**Design lint** — after every render, a checker below the status line reports
+guideline violations so you don't have to eyeball them: tap targets under
+44pt (iOS) / 48dp (Android), spacing values off the 2pt grid, content taller
+than the screen (will scroll/clip), and clipped/truncated elements. Colors and
+contrast are intentionally unchecked (monochrome shades are fine by design).
+
 **Dark** — the *Dark* checkbox renders the same spec with each platform's dark
 palette (Apple + Material 3). It's a color swap on top of the role/token system,
 so every screen has a dark variant for free — good for chart-forward asset
