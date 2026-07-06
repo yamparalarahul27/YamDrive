@@ -57,7 +57,10 @@
     .status { padding: 8px 18px; font-family: var(--mono); font-size: 11px; border-top: 1px solid var(--line); min-height: 34px; }
     .status.ok { color: #1a7f37; }
     .status.err { color: #d1242f; white-space: pre-wrap; }
-    @media (prefers-color-scheme: dark) { .status.ok { color: #3fb950; } .status.err { color: #f85149; } }
+    .lint { padding: 6px 18px 10px; font-family: var(--mono); font-size: 11px; border-top: 1px solid var(--line); color: #b25e00; white-space: pre-wrap; }
+    .lint:empty { display: none; }
+    .lint.ok { color: #1a7f37; }
+    @media (prefers-color-scheme: dark) { .status.ok { color: #3fb950; } .status.err { color: #f85149; } .lint { color: #e3963e; } .lint.ok { color: #3fb950; } }
 
     /* --- Stage --- */
     .stage { background: var(--stage); overflow: auto; padding: 28px 40px 40px; display: flex; flex-direction: column; align-items: center; gap: 22px; }
@@ -115,6 +118,7 @@
     <textarea id="outline" spellcheck="false" autocomplete="off" placeholder="screen Sign in&#10;  title Welcome back&#10;  field Email address&#10;  button Sign in"></textarea>
     <textarea id="input" spellcheck="false" autocomplete="off" hidden></textarea>
     <div class="status" id="status"></div>
+    <div class="lint" id="lint"></div>
   </section>
 
   <section class="stage" id="stage">
@@ -219,6 +223,24 @@
       el.append(track, fill, dot);
     }
 
+    function drawQR(el, node) {
+      const color = node.qrColor || "#111", N = 21, cell = 100 / N;
+      let r = "";
+      const finder = (ox, oy) => {
+        r += '<rect x="' + (ox * cell) + '" y="' + (oy * cell) + '" width="' + (7 * cell) + '" height="' + (7 * cell) + '" fill="' + color + '"/>';
+        r += '<rect x="' + ((ox + 1) * cell) + '" y="' + ((oy + 1) * cell) + '" width="' + (5 * cell) + '" height="' + (5 * cell) + '" fill="#fff"/>';
+        r += '<rect x="' + ((ox + 2) * cell) + '" y="' + ((oy + 2) * cell) + '" width="' + (3 * cell) + '" height="' + (3 * cell) + '" fill="' + color + '"/>';
+      };
+      let h = hashStr(node.qrSeed || "markscout") | 1;
+      for (let y = 0; y < N; y++) for (let x = 0; x < N; x++) {
+        if ((x < 8 && y < 8) || (x > N - 9 && y < 8) || (x < 8 && y > N - 9)) continue;
+        h = (h * 1103515245 + 12345) & 0x7fffffff;
+        if ((h >> 6) & 1) r += '<rect x="' + (x * cell) + '" y="' + (y * cell) + '" width="' + cell + '" height="' + cell + '" fill="' + color + '"/>';
+      }
+      finder(0, 0); finder(N - 7, 0); finder(0, N - 7);
+      el.innerHTML = '<svg viewBox="0 0 100 100" width="100%" height="100%" style="display:block">' + r + '</svg>';
+    }
+
     function drawProgress(el, node) {
       el.style.position = "relative";
       const pct = Math.max(0, Math.min(100, node.pct == null ? 50 : node.pct));
@@ -277,6 +299,7 @@
         s.minWidth = "0";
         if (square || node.role === "tfmark") { s.width = node.width + "px"; s.height = node.height + "px"; }
         else if (node.fixedW) s.width = node.fixedW + "px";
+        if (node.fixedH) s.height = node.fixedH + "px";
       }
       if (typeof node.opacity === "number") s.opacity = String(node.opacity);
 
@@ -287,7 +310,8 @@
         s.fontWeight = String(node.fontWeight || 400);
         s.color = node.color || "#1d1d1f";
         s.textAlign = TALIGN[node.textAlign] || "left";
-        s.lineHeight = "1.25";
+        s.lineHeight = node.lineHeight ? node.lineHeight + "px" : "1.25";
+        if (node.fontFamily) s.fontFamily = node.fontFamily;
         if (absolute) s.height = node.height + "px";
         return el;
       }
@@ -298,6 +322,9 @@
       if (node.cornerRadius) s.borderRadius = node.cornerRadius + "px";
       if (node.role === "sheet") s.borderRadius = "22px 22px 0 0"; // rounded top only
       if (node.stroke) s.border = (node.strokeWeight || 1) + "px solid " + node.stroke;
+      if (node.dashed) { s.background = "none"; s.borderTop = "2px dotted " + (node.dashColor || "#ccc"); }
+
+      if (node.role === "qr") { s.width = node.width + "px"; s.height = node.height + "px"; drawQR(el, node); return el; }
 
       // Custom-drawn components.
       if (node.role === "icon") {
@@ -553,6 +580,36 @@
       "    cardbig Polymarket | POLY | $2.19B | +3.1% | blue",
       "  buttons Continue*",
       "",
+      "screen Profile",
+      "  header  | Profile | ",
+      "  profilecard Markscout | ALPHA USER | #54801",
+      "",
+      "screen Notify | #F3F2F8",
+      "  permhead bell | Let us help you with your goals | Get updates on your progress and reminders to track your goals and activities.",
+      "  notifyart Time to wind down | 3:51 PM",
+      "  cta Enable notifications",
+      "",
+      "screen Withdraw | sheet",
+      "  sheethead Withdraw",
+      "  bignum $1,150.00 | Amount",
+      "  divider",
+      "  stat Status | Confirmed | ok",
+      "  stat Date | Jul 3, 12:56",
+      "  stat Network | Solana | coins",
+      "  stat To | 0z5f...uz3Wq",
+      "  stat Tx hash | 0ff6sg...87bd",
+      "  stat Fee | $0.00",
+      "  buttons View on SolScan",
+      "",
+      "screen Deposited | sheet",
+      "  sheethead Deposit",
+      "  bignum $1,150.00 | Amount",
+      "  divider",
+      "  stat Status | Confirmed | ok",
+      "  stat Date | Jul 3, 12:56",
+      "  stat Payment method | Apple Pay | apple",
+      "  stat Fee | $0.00",
+      "",
       "screen Level | gradient",
       "  back Back",
       "  level 8 | +2% FEE CASHBACK | 45",
@@ -627,6 +684,57 @@
       });
     }
 
+    // --- Design lint: guideline checks so you don't have to eyeball them ------
+    // Colors/contrast intentionally unchecked (B&W shades are fine by design).
+    const TAP_ROLES = { button: 1, buttonSecondary: 1, field: 1, cta: 1 };
+    function runLint(iosSpec, androidSpec) {
+      const issues = [];
+      const walk = (n, cb) => { if (!n) return; cb(n); (n.children || []).forEach(c => walk(c, cb)); };
+
+      // 1. Minimum tap targets, per platform guideline.
+      [["iOS", iosSpec, 44], ["Android", androidSpec, 48]].forEach(([label, spec, fallbackMin]) => {
+        if (!spec || !spec.root) return;
+        let min = fallbackMin;
+        try { min = MOBILE_TOKENS[spec.platform].metrics.tapTarget || fallbackMin; } catch (e) {}
+        const seen = {};
+        walk(spec.root, (n) => {
+          if (n.type === "FRAME" && TAP_ROLES[n.role] && typeof n.height === "number" && n.height < min) {
+            const k = n.role + ":" + n.height;
+            if (!seen[k]) { seen[k] = 1; issues.push("⚠ " + label + ": " + n.role + " is " + n.height + "pt — below the " + min + "pt tap target"); }
+          }
+        });
+      });
+
+      // 2. Odd spacing values (off the 2pt grid) — authored spacers + paddings.
+      let odd = 0;
+      if (iosSpec && iosSpec.root) walk(iosSpec.root, (n) => {
+        if (n.role === "spacer" && typeof n.height === "number" && n.height % 2 !== 0) odd++;
+        const l = n.layout || {};
+        // Screen top/bottom carry safe-area insets (59/34 etc.) — not authored.
+        const keys = n.role === "screen" ? ["paddingLeft", "paddingRight", "itemSpacing"]
+          : ["paddingTop", "paddingBottom", "paddingLeft", "paddingRight", "itemSpacing"];
+        keys.forEach(k => { if (typeof l[k] === "number" && l[k] % 2 !== 0) odd++; });
+      });
+      if (odd) issues.push("⚠ " + odd + " spacing value(s) off the 2pt grid");
+
+      // 3. Rendered checks on the iOS canvas: screen overflow + clipped content.
+      const canvas = document.querySelector("#iosScreen .canvas");
+      if (canvas && canvas.firstChild && iosSpec) {
+        const devH = (iosSpec.device && iosSpec.device.height) || 852;
+        const contentH = canvas.firstChild.scrollHeight;
+        if (contentH > devH + 2) issues.push("ℹ content " + Math.round(contentH) + "pt exceeds the " + devH + "pt screen — bottom will scroll/clip");
+        let clipped = 0;
+        canvas.querySelectorAll(".node-text").forEach(t => {
+          if (t.scrollWidth > t.clientWidth + 2 || t.scrollHeight > t.clientHeight + 2) clipped++;
+        });
+        canvas.querySelectorAll("div").forEach(d => {
+          if (d.style.overflow === "hidden" && d.scrollHeight > d.clientHeight + 2) clipped++;
+        });
+        if (clipped) issues.push("⚠ " + clipped + " element(s) clipped/truncated");
+      }
+      return issues;
+    }
+
     function paintActive() {
       const entry = screens[active] || screens[0];
       if (!entry) return;
@@ -653,6 +761,10 @@
         if (mode === "describe") input.value = JSON.stringify(spec, null, 2);
         const many = screens.length > 1 ? " · screen " + (active + 1) + "/" + screens.length : "";
         setStatus("Rendered “" + (spec.name || "screen") + "”" + many + (useGuidelines ? " · guidelines applied" : ""), "ok");
+        const lintEl = document.getElementById("lint");
+        const found = runLint(iosSpec, androidSpec);
+        lintEl.className = "lint" + (found.length ? "" : " ok");
+        lintEl.textContent = found.length ? found.join("\n") : "✓ lint: tap targets, spacing grid, overflow, clipping — all OK";
       } catch (e) { setStatus("Render error: " + e.message, "err"); }
     }
 

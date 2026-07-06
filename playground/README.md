@@ -37,6 +37,19 @@ is drawn in the top zone, so content clears the Dynamic Island / status bar and
 the home indicator. Bottom sheets add the bottom inset to their card; full-bleed
 charts still extend to the horizontal edges.
 
+**Auto metrics** — you describe structure; the system supplies the rest:
+text line-heights and block heights derive from each platform's type scale
+(estimated wrapped lines, so text never clips), and spacing uses a **semantic
+rhythm engine** instead of one flat gap — heading→content sits tight (8),
+sections separate wide (24), nav bars get room (20), list rows stack close (8),
+all on the 4pt grid. An authored `spacer` line always wins over auto-gaps.
+
+**Design lint** — after every render, a checker below the status line reports
+guideline violations so you don't have to eyeball them: tap targets under
+44pt (iOS) / 48dp (Android), spacing values off the 2pt grid, content taller
+than the screen (will scroll/clip), and clipped/truncated elements. Colors and
+contrast are intentionally unchecked (monochrome shades are fine by design).
+
 **Dark** — the *Dark* checkbox renders the same spec with each platform's dark
 palette (Apple + Material 3). It's a color swap on top of the role/token system,
 so every screen has a dark variant for free — good for chart-forward asset
@@ -146,6 +159,14 @@ carousel Trending Stocks | new
 | `switch UPI \| on` | labeled row with an on/off toggle |
 | `stats High:64,900 \| Low:61,200 \| Vol:1.2B` | row of stat tiles (label + value) |
 | `stat Available \| ₹80,000` | single key/value row (spaced apart) |
+| `stat Status \| Confirmed \| ok` | key/value with a green ✓ (use `ok`), or an icon name as the 3rd field |
+| `sheethead Withdraw` | sheet header: title + close (×) |
+| `profilecard Markscout \| ALPHA USER \| #54801` | lanyard/ID-badge card: logo, member seal, serif wordmark, outlined pills, dotted divider, mono info, QR |
+| `permhead bell \| Title \| Subtitle` | centered onboarding header: icon + title + subtitle |
+| `notifyart Time to wind down \| 3:51 PM` | notification-toast-over-faded-app-grid illustration |
+| `cta Enable notifications` | full-width black pill button |
+
+A screen can take a **custom background color** as a flag — `screen Notify | #F3F2F8`.
 | `banner 1% TDS on sells \| KYC verified` | tinted info banner (`\|` joins with ·) |
 | `tag 10x` | small pill badge |
 | `avatar BTC` | circular initials badge |
