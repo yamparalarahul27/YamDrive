@@ -2,6 +2,14 @@
 
 Local desktop app for running a downloaded Android APK in an emulator, capturing the current screen, and exporting a Figma-pasteable SVG bundle. Built on Electron; the macOS UI follows Apple's Human Interface Guidelines, and tool discovery works on macOS, Linux, and Windows.
 
+## Also In This Repo
+
+[`mobile/`](./mobile/) is a separate project: **Pitstop**, an Expo (SDK 57)
+Android app for planning road-trip itineraries on Google Maps — drop stops,
+find petrol nearby, order them, hand the route to Google Maps. It shares
+nothing with the Electron capture tool below; see
+[`mobile/README.md`](./mobile/README.md) for its setup and API keys.
+
 ## What It Builds
 
 The app creates a capture folder under:
