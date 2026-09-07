@@ -1,176 +1,188 @@
-# App Capture
+# Pitstop
 
-Local desktop app for running a downloaded Android APK in an emulator, capturing the current screen, and exporting a Figma-pasteable SVG bundle. Built on Electron; the macOS UI follows Apple's Human Interface Guidelines, and tool discovery works on macOS, Linux, and Windows.
+An Android road-trip planner built with React Native and Expo. Drop stops on a
+Google map, find petrol along the route, order the stops into an itinerary,
+then hand the whole route to Google Maps for turn-by-turn navigation.
 
-## Also In This Repo
+> The GitHub repo is still named `App-Capture-Exp` after an unrelated tool that
+> used to live here. That tool was removed; this app is now the whole repo.
+> Renaming the repo is a one-click change in GitHub's settings.
 
-[`mobile/`](./mobile/) is a separate project: **Pitstop**, an Expo (SDK 57)
-Android app for planning road-trip itineraries on Google Maps — drop stops,
-find petrol nearby, order them, hand the route to Google Maps. It shares
-nothing with the Electron capture tool below; see
-[`mobile/README.md`](./mobile/README.md) for its setup and API keys.
+This is the first working slice: the map, the stop list, and the plumbing
+around them. See [What is not here yet](#what-is-not-here-yet).
 
-## What It Builds
+## What it does
 
-The app creates a capture folder under:
+- **Map first.** Full-screen Google Maps with your location, your stops as
+  numbered pins colour-coded by kind, and a line joining them in order.
+- **Drop a stop.** Long-press anywhere on the map. The address is reverse
+  geocoded to prefill the name. Tapping a Google POI label works too.
+- **Find petrol (and food, breaks, hotels, sights).** One-tap category search
+  around whatever part of the map you are looking at. Results appear as pins
+  and as a list with distances; add any of them to the trip.
+- **Search by name.** Find a town, landmark or address and add it as a stop.
+- **Build the itinerary.** Reorder stops, edit or delete them, add notes like
+  "fill up here — next pump is 90 km", and see per-leg and total distance with
+  a rough drive time.
+- **Navigate.** Open a single stop, or the whole ordered route, in Google Maps.
+- **Survives restarts.** The trip is saved to device storage.
 
-```text
-~/Documents/App Capture/Captures/
-```
+## Stack
 
-Each capture contains:
+React Native, via Expo.
 
-- `screen.png`: exact Android screenshot.
-- `hierarchy.xml`: Android UI hierarchy from `uiautomator`.
-- `figma-capture.svg`: screenshot plus editable accessibility text/click-target overlays.
-- `layout.json`: a Figma layout spec (frames + text with inferred auto-layout) for the importer plugin.
-- `capture.json`: parsed capture metadata.
-- `figma-import.json`: self-contained payload for the companion Figma plugin.
+Those are not alternatives to each other: Expo is a framework built on top of
+React Native, and it is the setup React Native's own documentation recommends
+by default. `react-native` is a direct dependency here and the UI is built from
+React Native's own `View`, `Text`, `Pressable` and `Modal`. What Expo adds is
+the tooling around it — native configuration in `app.config.ts` instead of
+hand-edited Gradle and manifest files, config plugins, cloud builds, and the
+`expo-*` module library.
 
-## Ways Into Figma
+It is not a one-way door. `npx expo prebuild` generates the real `android/`
+directory whenever you need to write native Kotlin or add a library that has no
+config plugin.
 
-| Route | Output | Editable? | Auto-layout? | How |
-| --- | --- | --- | --- | --- |
-| SVG paste | `figma-capture.svg` | Yes (vectors + text) | No (absolute positions) | **Copy SVG** → paste into Figma |
-| Plugin — screenshot | `figma-import.json` | Yes (text + tap-target layers over a screenshot image fill) | No | Load into the importer plugin |
-| Plugin — auto-layout | `layout.json` | Yes (real frames + text) | **Yes** | **Copy Layout JSON** → paste into the importer plugin |
+| Piece | Choice |
+| --- | --- |
+| Runtime | React Native 0.86, New Architecture, Hermes |
+| Framework | Expo SDK 57 |
+| Language | TypeScript, `strict` |
+| Routing | expo-router (file-based) |
+| Map | `react-native-maps` on the Google provider |
+| Location | `expo-location` |
+| Storage | `@react-native-async-storage/async-storage` |
+| State | React context + reducer (`src/lib/trip-store.tsx`) |
+| Icons | `@expo/vector-icons` (Material Community) |
 
-Figma's native editable format can't be written directly from outside, so
-auto-layout is delivered through a plugin rather than the clipboard. The
-companion plugin reads either `figma-import.json` or `layout.json` (auto-detected).
-See [`figma-plugin/`](./figma-plugin/) for install + usage and the JSON schema.
-
-### Image-only (no device)
-
-The same `layout.json` shape is the contract for screenshots: hand an image +
-device dimensions to a vision model (Claude/Codex), ask it to emit JSON matching
-the schema in `figma-plugin/README.md`, then paste that into the importer
-plugin. A complete hand-authored sample lives in
-[`examples/image-only-example.layout.json`](./examples/image-only-example.layout.json).
-Spacing and grouping are inferred from the image, so expect light touch-up.
+`react-native-maps` is used rather than Expo's own `expo-maps` because
+`expo-maps` is still published as alpha and documented as subject to breaking
+changes. Swapping later is contained to `src/components/map-markers.tsx` and
+the map screen.
 
 ## Requirements
 
-- macOS, Linux, or Windows
 - Node.js 22+
-- Android Studio or Android SDK command-line tools
-- At least one Android Virtual Device
+- An Android device or emulator
+- A Google Cloud project with billing enabled, for the API keys below
 
-The app searches for Android tools in:
+## Google API keys
 
-- `$ANDROID_HOME`
-- `$ANDROID_SDK_ROOT`
-- `~/Library/Android/sdk` (macOS)
-- `~/Android/Sdk` (Linux)
-- `%LOCALAPPDATA%\Android\Sdk` (Windows)
-- current `PATH`
+The app needs two keys, because they are used in two different ways. Both are
+optional for a first run — the app degrades and tells you what is missing —
+but the map itself will be blank without the first one.
 
-## Run
+| Env var | Used by | Restrict it to | Needed for |
+| --- | --- | --- | --- |
+| `GOOGLE_MAPS_API_KEY` | The native Maps SDK, via `AndroidManifest.xml` | Android apps: package name + signing cert SHA-1 | The map rendering at all |
+| `EXPO_PUBLIC_GOOGLE_PLACES_API_KEY` | Places API (New) REST calls from JS | The Places API only | Category and text search |
+
+Set up:
+
+1. In the [Google Cloud console](https://console.cloud.google.com/), enable
+   **Maps SDK for Android** and **Places API (New)**.
+2. Create the keys and apply the restrictions in the table above.
+3. `cp .env.example .env` and fill both in.
+
+Two caveats worth knowing before you ship this:
+
+- `EXPO_PUBLIC_` variables are **inlined into the JS bundle** at build time.
+  Anyone with the APK can read that key. Restricting it to the Places API caps
+  the damage; the real fix is to proxy Places calls through a backend that
+  holds the key. Do that before a public release.
+- An **Android-restricted key will be rejected** by the Places REST endpoint,
+  which is why these are separate variables. If nearby search returns a
+  permission error, that mismatch is the usual cause — the app surfaces
+  Google's own message in the results sheet so you can see which it is.
+
+Without a Places key, text search still works: it falls back to the operating
+system's geocoder, which resolves addresses and place names to coordinates but
+returns no names, ratings or opening hours. Category search needs the key and
+says so.
+
+## Running it
 
 ```bash
 npm install
-npm start
 ```
 
-> If your shell exports `ELECTRON_RUN_AS_NODE=1`, the Electron binary runs as
-> plain Node and `require("electron")` returns a path string instead of the
-> API (every API such as `app` and `nativeTheme` becomes `undefined`, crashing
-> at startup). Launch with it cleared:
->
-> ```bash
-> unset ELECTRON_RUN_AS_NODE && npm start
-> ```
-
-## Develop
+Then build a **development build**. Expo Go cannot carry your own
+`GOOGLE_MAPS_API_KEY` — that key is written into `AndroidManifest.xml` when the
+app is built, and Expo Go ships a prebuilt manifest — so a development build is
+required to see your own map tiles and your own quota. Build it once, then
+iterate over the JS as usual:
 
 ```bash
-npm run check   # syntax-check every source file
-npm test        # run the unit tests (node --test)
+# Local build: needs Android Studio and a device or emulator attached
+npx expo run:android
+
+# Or build in the cloud with EAS instead
+npx eas build --profile development --platform android
 ```
 
-## Troubleshooting
+After that, `npm run android` starts the dev server against the installed
+build.
 
-- **`adb was not found` / `Android Emulator was not found`** — the Android SDK
-  is not installed or not discoverable. Install Android Studio
-  (`brew install --cask android-studio`) and complete the **Standard** setup
-  wizard, which installs `platform-tools` (`adb`) and the emulator to
-  `~/Library/Android/sdk` (macOS). If the SDK lives elsewhere, set `ANDROID_HOME`
-  or `ANDROID_SDK_ROOT` to that path.
-- **No AVDs listed** — create one in Android Studio via
-  **More Actions → Virtual Device Manager → Create Virtual Device**.
+Changing `.env`, `app.config.ts`, or any native dependency means rebuilding —
+`GOOGLE_MAPS_API_KEY` is baked into the manifest at build time, not read at
+runtime.
 
-## Workflow
+## Checks
 
-1. Start the app.
-2. Select an APK.
-3. Start an AVD or select a connected emulator/device.
-4. Install the APK.
-5. Launch the detected package.
-6. Click `Live` to mirror the device inside the app and control it with the
-   mouse (click to tap, drag to swipe/scroll). See "Live Engines" below.
-7. Click `Capture`.
-8. Click `Copy SVG`.
-9. Paste into a Figma Design file.
-
-You can also use `Copy PNG` for an exact bitmap capture.
-
-## Live Engines
-
-`Live` mirrors the device inside Appu so you can drive the app without leaving
-the window. Two engines are used automatically:
-
-- **scrcpy** (preferred): real-time H.264 video decoded with WebCodecs, with
-  full mouse control (tap, drag, scroll). Works for emulators and real phones.
-  Requires a scrcpy server jar. The app looks for it via, in order:
-  - `SCRCPY_SERVER_JAR` (explicit path)
-  - `~/.appu/scrcpy-server.jar`
-  - a Homebrew/Linux scrcpy install (`.../share/scrcpy/scrcpy-server`)
-
-  Install with `brew install scrcpy` (macOS) or your package manager. The server
-  version must match; the app auto-detects it from an installed `scrcpy`, or set
-  `SCRCPY_SERVER_VERSION`.
-- **screencap** (fallback): if scrcpy isn't available, Appu falls back to polled
-  `adb exec-out screencap` frames (~1 fps) with tap/swipe forwarding.
-
-The scrcpy engine is experimental and pinned to the v2.x server protocol.
-
-## How The Capture Works
-
-This project intentionally uses official Android/Figma-supported surfaces:
-
-- Android Emulator command-line + `adb install`: https://developer.android.com/studio/run/emulator-commandline
-- `adb exec-out screencap -p`: https://developer.android.com/tools/adb#screencap
-- UI Automator hierarchy/accessibility surface: https://developer.android.com/training/testing/other-components/ui-automator
-- Android Monkey launch by package: https://developer.android.com/studio/test/other-testing-tools/monkey
-- Figma SVG paste/import: https://help.figma.com/hc/en-us/articles/360040030374-Copy-assets-between-design-tools
-- Figma Plugin API node creation path for future importer work: https://developers.figma.com/docs/plugins/api/figma/
-
-The desktop UI follows macOS Human Interface Guidelines direction for sidebars, toolbars, buttons, typography, color, and materials:
-
-- https://developer.apple.com/design/human-interface-guidelines/designing-for-macos
-- https://developer.apple.com/design/human-interface-guidelines/sidebars
-- https://developer.apple.com/design/human-interface-guidelines/toolbars
-- https://developer.apple.com/design/human-interface-guidelines/buttons
-- https://developer.apple.com/design/human-interface-guidelines/typography
-- https://developer.apple.com/design/human-interface-guidelines/materials
-
-## Current Limitation
-
-A downloaded APK does not expose a DOM or React Native component tree. Without app instrumentation, this app cannot recover exact native styles as editable Figma nodes.
-
-The output is therefore:
-
-```text
-exact screenshot
-+ accessible text layers
-+ clickable/focusable bounds
-+ layout.json (frames + text + inferred auto-layout)
-+ capture metadata
+```bash
+npm run check      # typecheck + lint + tests
+npm run typecheck  # tsc, app and test suites
+npm run lint
+npm test           # Node's test runner over the pure logic
 ```
 
-When the device exposes a hierarchy, `layout.json` carries real bounds, text,
-and inferred auto-layout into editable Figma nodes via the importer plugin.
-Colors and exact native styles are not present in the hierarchy, so frame fills
-default to neutral placeholders and are easy to adjust in Figma. For
-screenshots with no hierarchy, generate `layout.json` from the image with a
-vision model against the documented schema.
+## Layout
+
+```
+app.config.ts              Expo config; reads the Maps key from the environment
+src/app/
+  _layout.tsx              Root stack, theme, trip provider, splash gate
+  (tabs)/_layout.tsx       Bottom tabs
+  (tabs)/index.tsx         Map screen
+  (tabs)/itinerary.tsx     Trip screen
+src/lib/
+  types.ts                 Coordinate, Stop, Trip, StopCategory
+  categories.ts            Per-category label, icon, colour, search query
+  geo.ts                   Distance, formatting, map regions
+  places.ts                Places API (New) + OS geocoder fallback
+  navigation-links.ts      Google Maps handoff URLs
+  storage.ts               AsyncStorage load/save with validation
+  trip-store.tsx           Trip context and reducer
+src/components/            Sheets, markers, buttons, fields
+test/                      Node tests for geo and navigation-links
+```
+
+### Things you will probably want to change
+
+- `android.package` in `app.config.ts` is `com.pitstop.app`. Change it before
+  publishing.
+- `CATEGORIES` in `src/lib/categories.ts` holds the search text per category.
+  The fuel query is `"petrol pump"`, which is right for India and weaker in
+  places that say "gas station". Tune per region.
+- `ROAD_WINDING_FACTOR` and `AVERAGE_SPEED_KPH` in `src/lib/geo.ts` drive the
+  distance and time estimates.
+
+## What is not here yet
+
+Known gaps, roughly in the order they would hurt:
+
+- **Distances are estimates, not routing.** Everything is straight-line
+  haversine distance plus 25% for road winding, at an assumed 45 km/h. Real
+  numbers need the Google Directions API, which would also give a road-shaped
+  polyline instead of the straight lines drawn between stops today.
+- **One trip.** The data model is already keyed by trip id, but there is no
+  trip list or switcher.
+- **Reordering is by arrow buttons**, not drag and drop.
+- **Google Maps takes 9 waypoints.** Longer trips prompt before opening a
+  truncated route rather than splitting into legs.
+- **No offline maps, no fuel prices, no range or fuel-economy planning.**
+- **Tests cover the pure logic only** (`geo.ts`, `navigation-links.ts`) —
+  those run under Node without a bundler. Component and store tests would need
+  `jest-expo` to resolve the `@/` alias and mock the native modules.
+- **Routes that cross the antimeridian** would compute a globe-spanning
+  bounding box in `regionForCoordinates`.

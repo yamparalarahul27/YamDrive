@@ -458,7 +458,7 @@ export default function MapScreen() {
             style={[styles.notice, { backgroundColor: theme.background, borderColor: theme.danger }]}>
             <Icon name="key-outline" size={16} color={theme.danger} />
             <ThemedText type="small" style={styles.noticeText}>
-              No Google Maps key in this build, so the map may render blank. See mobile/README.md.
+              No Google Maps key in this build, so the map may render blank. See README.md.
             </ThemedText>
           </Pressable>
         ) : locationNotice ? (
