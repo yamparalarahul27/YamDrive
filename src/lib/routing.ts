@@ -14,7 +14,7 @@ export async function calculateRoute(plan: RidePlan, stops: Stop[]): Promise<Roa
   const end = plan.destinationPin ? { lat: plan.destinationPin.latitude, lon: plan.destinationPin.longitude } : await resolve(plan.destination);
   const payload = { locations: [start, ...stops.map(s => ({ lat: s.latitude, lon: s.longitude })), end],
     costing: 'motorcycle', units: 'kilometers', language: 'en-US' };
-  const response = await publicJson<{ trip?: { status: number; summary: { length: number; time: number }; legs: { shape: string; maneuvers?: { begin_shape_index: number; type: number; instruction: string }[] }[] }; error?: string }>(
+  const response = await publicJson<{ trip?: { status: number; summary: { length: number; time: number }; legs: { shape: string; maneuvers?: { begin_shape_index: number; type: number; instruction: string; street_names?: string[] }[] }[] }; error?: string }>(
     `${SERVICES.route}?json=${encodeURIComponent(JSON.stringify(payload))}`);
   const trip = response.trip;
   if (!trip || trip.status !== 0 || !trip.legs?.length) throw new Error(response.error || 'No motorcycle route found. Check the selected stops.');
@@ -23,7 +23,7 @@ export async function calculateRoute(plan: RidePlan, stops: Stop[]): Promise<Roa
     const points = decodePolyline6(leg.shape), offset = Math.max(0, coordinates.length - 1);
     for (const m of leg.maneuvers ?? []) {
       if (Number.isInteger(m.begin_shape_index) && m.begin_shape_index >= 0 && m.begin_shape_index < points.length && Number.isInteger(m.type) && typeof m.instruction === 'string')
-        steps.push({ index: offset + m.begin_shape_index, type: m.type, instruction: m.instruction.slice(0, 600) });
+        steps.push({ index: offset + m.begin_shape_index, type: m.type, instruction: m.instruction.slice(0, 600), streetNames: Array.isArray(m.street_names) ? m.street_names.filter(n => typeof n === 'string').slice(0, 8).map(n => n.slice(0, 120)) : undefined });
     }
     coordinates.push(...(coordinates.length ? points.slice(1) : points));
   }

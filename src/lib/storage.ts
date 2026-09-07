@@ -1,76 +1,27 @@
-import { parseRoadRoute } from '@/lib/route-geometry';
-import { parseRidePlan } from '@/lib/ride-plan';
-
 import AsyncStorage from '@react-native-async-storage/async-storage';
+import { parseTrip, parseRideLibrary, type RideLibrary } from '@/lib/ride-library';
 
-import { isStopCategory } from '@/lib/categories';
-import type { Stop, Trip } from '@/lib/types';
+const LEGACY_KEY = 'pitstop.trip.v1';
+const LIBRARY_KEY = 'yamdrive.rides.v1';
 
-/** Bump the suffix if the persisted shape ever changes incompatibly. */
-const STORAGE_KEY = 'pitstop.trip.v1';
-
-const isFiniteNumber = (value: unknown): value is number =>
-  typeof value === 'number' && Number.isFinite(value);
-
-/**
- * Validate one persisted stop. Returns null for anything unusable so a single
- * corrupt entry cannot take the whole trip down with it.
- */
-function parseStop(value: unknown): Stop | null {
-  if (typeof value !== 'object' || value === null) return null;
-  const raw = value as Record<string, unknown>;
-
-  if (typeof raw.id !== 'string' || raw.id === '') return null;
-  if (!isFiniteNumber(raw.latitude) || !isFiniteNumber(raw.longitude)) return null;
-  if (Math.abs(raw.latitude) > 90 || Math.abs(raw.longitude) > 180) return null;
-
-  return {
-    id: raw.id,
-    name: typeof raw.name === 'string' && raw.name !== '' ? raw.name : 'Unnamed stop',
-    category: isStopCategory(raw.category) ? raw.category : 'other',
-    latitude: raw.latitude,
-    longitude: raw.longitude,
-    address: typeof raw.address === 'string' ? raw.address : undefined,
-    note: typeof raw.note === 'string' ? raw.note : undefined,
-    createdAt: isFiniteNumber(raw.createdAt) ? raw.createdAt : Date.now(),
-  };
-}
-
-function parseTrip(value: unknown): Trip | null {
-  if (typeof value !== 'object' || value === null) return null;
-  const raw = value as Record<string, unknown>;
-  if (typeof raw.id !== 'string' || raw.id === '') return null;
-
-  const stops = Array.isArray(raw.stops)
-    ? raw.stops.map(parseStop).filter((stop): stop is Stop => stop !== null)
-    : [];
-
-  return {
-    id: raw.id,
-    name: typeof raw.name === 'string' && raw.name !== '' ? raw.name : 'My trip',
-    stops,
-    ridePlan: parseRidePlan(raw.ridePlan),
-    roadRoute: parseRoadRoute(raw.roadRoute),
-    updatedAt: isFiniteNumber(raw.updatedAt) ? raw.updatedAt : Date.now(),
-  };
-}
-
-/** Returns null when there is nothing saved, or when what is saved is junk. */
-export async function loadTrip(): Promise<Trip | null> {
-  try {
-    const serialized = await AsyncStorage.getItem(STORAGE_KEY);
-    if (serialized === null) return null;
-    return parseTrip(JSON.parse(serialized));
-  } catch (error) {
-    console.warn('[pitstop] could not read the saved trip, starting fresh', error);
-    return null;
+/** Preserve the original single-ride key as a migration backup. */
+export async function loadRideLibrary(): Promise<RideLibrary | null> {
+  const saved = await AsyncStorage.getItem(LIBRARY_KEY);
+  if (saved !== null) {
+    const library = parseRideLibrary(JSON.parse(saved));
+    if (!library) throw new Error('Saved rides could not be read.');
+    return library;
   }
+  const legacy = await AsyncStorage.getItem(LEGACY_KEY);
+  if (legacy === null) return null;
+  const trip = parseTrip(JSON.parse(legacy));
+  if (!trip) throw new Error('Your previous ride could not be read.');
+  return { activeId: trip.id, trips: [trip] };
 }
-
-export async function saveTrip(trip: Trip): Promise<void> {
-  try {
-    await AsyncStorage.setItem(STORAGE_KEY, JSON.stringify(trip));
-  } catch (error) {
-    console.warn('[pitstop] could not save the trip', error);
-  }
+// Serialize writes so an older snapshot cannot finish after a newer one.
+let writes: Promise<void> = Promise.resolve();
+export function saveRideLibrary(library: RideLibrary): Promise<void> {
+  const serialized = JSON.stringify(library);
+  writes = writes.catch(() => undefined).then(() => AsyncStorage.setItem(LIBRARY_KEY, serialized));
+  return writes;
 }

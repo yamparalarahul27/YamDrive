@@ -1,7 +1,7 @@
 import { StyleSheet, TextInput, View, type TextInputProps } from 'react-native';
 
 import { ThemedText } from '@/components/themed-text';
-import { MinTouchSize, Radius, Spacing } from '@/constants/theme';
+import { MinTouchSize, Radius, Spacing, Fonts } from '@/constants/theme';
 import { useTheme } from '@/hooks/use-theme';
 
 export type TextFieldProps = Omit<TextInputProps, 'style'> & {
@@ -40,13 +40,16 @@ export function TextField({ label, multiline = false, ...inputProps }: TextField
 
 const styles = StyleSheet.create({
   field: {
-    gap: Spacing.one,
+    gap: Spacing.two,
   },
   input: {
     minHeight: MinTouchSize,
     paddingHorizontal: Spacing.three,
     paddingVertical: Spacing.two,
     fontSize: 16,
+    lineHeight: 22,
+    fontFamily: Fonts.sans,
+    includeFontPadding: false,
     borderRadius: Radius.md,
     borderWidth: StyleSheet.hairlineWidth,
   },

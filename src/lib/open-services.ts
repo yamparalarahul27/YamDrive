@@ -1,6 +1,6 @@
 import AsyncStorage from '@react-native-async-storage/async-storage';
 
-export const APP_AGENT = 'Pitstop/1.0 (https://github.com/yamparalarahul27/YamDrive)';
+export const APP_AGENT = 'YamDrive/1.0 (https://github.com/yamparalarahul27/YamDrive)';
 export const SERVICES = {
   tiles: process.env.EXPO_PUBLIC_OSM_TILES_URL || 'https://tile.openstreetmap.org/{z}/{x}/{y}.png',
   route: process.env.EXPO_PUBLIC_ROUTING_URL || 'https://valhalla1.openstreetmap.de/route',

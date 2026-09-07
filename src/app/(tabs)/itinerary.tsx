@@ -1,3 +1,4 @@
+import { useFloatingNavigation } from '@/hooks/use-floating-navigation';
 import { DEFAULT_RIDE_PLAN } from '@/lib/ride-plan';
 import { routeSignature } from '@/lib/route-geometry';
 import { useRouter } from 'expo-router';
@@ -5,6 +6,7 @@ import { useCallback, useMemo, useState } from 'react';
 import { Alert, Linking, Pressable, ScrollView, StyleSheet, View } from 'react-native';
 import { useSafeAreaInsets } from 'react-native-safe-area-context';
 
+import { Brand } from '@/components/brand';
 import { Button } from '@/components/button';
 import { Icon } from '@/components/icon';
 import { IconButton } from '@/components/icon-button';
@@ -20,6 +22,7 @@ import { useTrip } from '@/lib/trip-store';
 import type { Stop } from '@/lib/types';
 
 export default function ItineraryScreen() {
+  const dock = useFloatingNavigation();
   const theme = useTheme();
   const router = useRouter();
   const insets = useSafeAreaInsets();
@@ -75,12 +78,13 @@ export default function ItineraryScreen() {
     ]);
   }, [stops.length, clearStops]);
 
-  const surface = { backgroundColor: theme.backgroundElement, borderColor: theme.border };
+  const surface = { backgroundColor: theme.surface, borderColor: theme.border };
   return <View style={{ flex: 1, backgroundColor: theme.background }}>
-    <ScrollView contentContainerStyle={[styles.content, { paddingTop: insets.top + Spacing.three,
+    <ScrollView contentContainerStyle={[styles.content, { paddingBottom: dock.clearance + 16, paddingTop: insets.top + Spacing.three,
       paddingLeft: insets.left + Spacing.three, paddingRight: insets.right + Spacing.three }]}>
+      <Brand />
       <View style={styles.row}>
-        <View style={{ flex: 1 }}><ThemedText type="subtitle">Trip</ThemedText>
+        <View style={{ flex: 1, gap: 4 }}><ThemedText type="subtitle">Trip</ThemedText>
           <ThemedText type="small" themeColor="textSecondary" numberOfLines={1}>{trip.name}</ThemedText></View>
         <IconButton name="tune-variant" accessibilityLabel="Trip options" onPress={() => { setNameDraft(trip.name); setOptionsOpen(true); }} />
       </View>
@@ -94,16 +98,20 @@ export default function ItineraryScreen() {
         <Icon name="map-marker-outline" size={40} color={theme.tint} />
         <ThemedText type="smallBold">No saved stops</ThemedText>
         <ThemedText type="small" themeColor="textSecondary" style={{ textAlign: 'center' }}>Choose places near break pins, or hold the map to add a stop.</ThemedText>
-        <Button label="Find stops" icon="map-outline" onPress={() => router.navigate('/')} />
+        <Button label="Find stops" icon="map-outline" onPress={() => router.navigate('/map')} />
       </View> : <>
-        <Button label="View map" icon="map-outline" onPress={() => router.navigate('/')} />
+        <Button label="View map" icon="map-outline" onPress={() => router.navigate('/map')} />
         <ThemedText type="small" themeColor="textSecondary">Visit order · tap a stop for details</ThemedText>
         {stops.map((stop, index) => {
           const meta = categoryMeta(stop.category), open = expanded === stop.id;
-          return <View key={stop.id} style={[styles.card, surface]}>
+          return <View key={stop.id} style={{ flexDirection: 'row', gap: 12 }}>
+            <View style={{ width: 28, alignItems: 'center' }}>
+              <View style={[styles.badge, { backgroundColor: theme.text }]}><ThemedText type="smallBold" style={{ color: theme.background }}>{index + 1}</ThemedText></View>
+              {index < stops.length - 1 ? <View style={{ width: 1, flex: 1, minHeight: 24, backgroundColor: theme.border, marginTop: 8, marginBottom: -4 }} /> : null}
+            </View>
+            <View style={[styles.card, surface, { flex: 1 }]}>
             <Pressable accessibilityRole="button" accessibilityLabel={`${index + 1}. ${stop.name}, ${meta.label}`}
               accessibilityState={{ expanded: open }} style={styles.stopRow} onPress={() => setExpanded(open ? null : stop.id)}>
-              <View style={[styles.badge, { backgroundColor: meta.color }]}><ThemedText type="smallBold" style={{ color: '#fff' }}>{index + 1}</ThemedText></View>
               <View style={{ flex: 1, gap: 4 }}><ThemedText type="smallBold" numberOfLines={open ? undefined : 2}>{stop.name}</ThemedText>
                 <View style={styles.meta}><Icon name={meta.icon} size={16} color={meta.color} /><ThemedText type="small" themeColor="textSecondary">{meta.label}</ThemedText></View></View>
               <Icon name={open ? 'chevron-up' : 'chevron-down'} color={theme.textSecondary} />
@@ -119,7 +127,7 @@ export default function ItineraryScreen() {
                 <IconButton name="trash-can-outline" accessibilityLabel={`Remove ${stop.name}`} color={theme.danger} onPress={() => handleDelete(stop)} />
               </View>
             </> : null}
-          </View>;
+          </View></View>;
         })}
       </>}
     </ScrollView>
@@ -136,7 +144,7 @@ export default function ItineraryScreen() {
 }
 
 const styles = StyleSheet.create({
-  content: { paddingHorizontal: Spacing.three, paddingBottom: Spacing.five, gap: 12 },
+  content: { paddingHorizontal: Spacing.three, paddingBottom: Spacing.five, gap: 16 },
   row: { flexDirection: 'row', alignItems: 'center', gap: 12 },
   card: { padding: Spacing.three, borderRadius: Radius.lg, borderWidth: StyleSheet.hairlineWidth, gap: 12 },
   empty: { alignItems: 'center', gap: 16, paddingVertical: 32, paddingHorizontal: 20 },

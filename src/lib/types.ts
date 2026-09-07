@@ -11,7 +11,11 @@ export type Coordinate = {
  * What a stop is for. Drives the marker colour/icon and the nearby-search
  * query, so adding a category means touching `categories.ts` and nothing else.
  */
-export type StopCategory = 'fuel' | 'food' | 'rest' | 'stay' | 'sight' | 'other';
+export const STOP_CATEGORIES = ['fuel', 'food', 'rest', 'stay', 'sight', 'other'] as const;
+export type StopCategory = typeof STOP_CATEGORIES[number];
+export function isStopCategory(value: unknown): value is StopCategory {
+  return typeof value === 'string' && (STOP_CATEGORIES as readonly string[]).includes(value);
+}
 
 export type Stop = Coordinate & {
   id: string;

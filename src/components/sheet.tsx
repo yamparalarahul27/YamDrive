@@ -1,5 +1,5 @@
 import type { ReactNode } from 'react';
-import { KeyboardAvoidingView, Modal, Platform, Pressable, ScrollView, StyleSheet, useWindowDimensions, View } from 'react-native';
+import { KeyboardAvoidingView, Modal, PanResponder, Platform, Pressable, ScrollView, StyleSheet, useWindowDimensions, View } from 'react-native';
 import { useSafeAreaInsets } from 'react-native-safe-area-context';
 
 import { IconButton } from '@/components/icon-button';
@@ -8,6 +8,8 @@ import { Radius, Spacing } from '@/constants/theme';
 import { useTheme } from '@/hooks/use-theme';
 
 export type SheetProps = {
+  showHandle?: boolean;
+  topPadding?: number;
   visible: boolean;
   onClose: () => void;
   title: string;
@@ -23,7 +25,8 @@ export type SheetProps = {
  * gesture-driven sheet library would be the upgrade if these ever need to be
  * draggable or have snap points.
  */
-export function Sheet({ visible, onClose, title, subtitle, children, footer }: SheetProps) {
+export function Sheet({ topPadding = Spacing.two, showHandle = false, visible, onClose, title, subtitle, children, footer }: SheetProps) {
+  const drag = PanResponder.create({ onMoveShouldSetPanResponder: (_, g) => Math.abs(g.dy) > 8 && Math.abs(g.dy) > Math.abs(g.dx), onPanResponderRelease: (_, g) => { if (g.dy > 50 || g.vy > 0.7) onClose(); } });
   const theme = useTheme();
   const insets = useSafeAreaInsets();
   const { height, width } = useWindowDimensions();
@@ -51,11 +54,13 @@ export function Sheet({ visible, onClose, title, subtitle, children, footer }: S
               styles.sheet,
               {
                 maxHeight: height - insets.top - 8,
+                paddingTop: topPadding,
                 backgroundColor: theme.background,
                 borderColor: theme.border,
                 paddingBottom: insets.bottom + Spacing.three,
               },
             ]}>
+            {showHandle ? <View {...drag.panHandlers} accessible={false} style={{ height: 28, alignItems: 'center', justifyContent: 'center' }}><View style={{ width: 36, height: 4, borderRadius: 2, backgroundColor: theme.border }} /></View> : null}
             <View style={styles.header}>
               <View style={styles.headerText}>
                 <ThemedText type="smallBold" style={styles.title}>
@@ -98,16 +103,16 @@ const styles = StyleSheet.create({
   },
   header: {
     flexDirection: 'row',
-    alignItems: 'flex-start',
+    alignItems: 'center',
     gap: Spacing.two,
   },
   headerText: {
     flex: 1,
-    paddingTop: Spacing.two,
+    gap: 4,
   },
   title: {
-    fontSize: 17,
-    lineHeight: 24,
+    fontSize: 20,
+    lineHeight: 26,
   },
   footer: {
     flexDirection: 'row',

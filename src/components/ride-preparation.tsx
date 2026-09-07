@@ -1,4 +1,5 @@
 import { useState } from 'react';
+import Svg, { Defs, LinearGradient, Stop, Rect } from 'react-native-svg';
 import { Linking, Pressable, ScrollView, StyleSheet, Switch, View, useWindowDimensions } from 'react-native';
 import { useSafeAreaInsets } from 'react-native-safe-area-context';
 import { Button } from '@/components/button';
@@ -16,7 +17,7 @@ export function RidePreparation({ plan, elapsedMinutes, onChange }: { plan: Ride
   const [time, setTime] = useState(plan.departureTime ?? '05:00');
   const [error, setError] = useState('');
   const checked = plan.preRideChecks ?? [];
-  const surface = { backgroundColor: theme.backgroundElement, borderColor: theme.border };
+  const surface = { backgroundColor: theme.surface, borderColor: theme.border };
   const saveTime = () => {
     const value = time.trim();
     if (!parseDepartureTime(value)) { setError('Use 24-hour time, for example 05:00 or 16:30.'); return; }
@@ -24,20 +25,28 @@ export function RidePreparation({ plan, elapsedMinutes, onChange }: { plan: Ride
     setSheet(null);
   };
   return <>
-    <Pressable accessibilityRole="button" accessibilityLabel="Set departure time" style={[styles.card, styles.row, surface]}
+    <Pressable accessibilityRole="button" accessibilityLabel="Set departure time" style={[styles.card, { overflow: 'hidden', backgroundColor: theme.departure, borderColor: theme.departure }]}
       onPress={() => { setTime(plan.departureTime ?? '05:00'); setError(''); setSheet('departure'); }}>
-      <Icon name="clock" size={24} color={theme.tint} />
-      <View style={{ flex: 1 }}><ThemedText type="smallBold">{plan.departureTime ? `Depart ${plannedClock(plan.departureTime)}` : 'Set departure'}</ThemedText>
-        <ThemedText type="small" themeColor="textSecondary">{plan.departureTime ? `Arrive ~${plannedClock(plan.departureTime, elapsedMinutes)} · IST` : 'Plan stop times · India (IST)'}</ThemedText></View>
-      <Icon name="pencil-outline" color={theme.textSecondary} />
+      <View pointerEvents="none" style={StyleSheet.absoluteFill}><Svg width="100%" height="100%">
+        <Defs><LinearGradient id="departure-dawn" x1="0" y1="0" x2="1" y2="1"><Stop offset="0" stopColor="#D2C4DB" /><Stop offset="1" stopColor="#E8B18E" /></LinearGradient></Defs>
+        <Rect width="100%" height="100%" fill="url(#departure-dawn)" />
+      </Svg></View>
+      <View style={styles.row}>
+        <View style={{ flex: 1, gap: 5 }}>
+          <ThemedText type="caption" style={{ color: theme.onFeature }}>Departure · IST</ThemedText>
+          <ThemedText type="display" style={{ color: theme.onFeature }}>{plan.departureTime ?? 'Set time'}</ThemedText>
+          <ThemedText type="caption" style={{ color: theme.onFeature }}>{plan.departureTime ? `Arrival ~${plannedClock(plan.departureTime, elapsedMinutes)}` : 'Make an early start your plan'}</ThemedText>
+        </View>
+        <View style={{ width: 48, height: 48, borderRadius: 24, backgroundColor: '#242523', alignItems: 'center', justifyContent: 'center' }}><Icon name="clock" size={24} color="#F5F5F1" /></View>
+      </View>
     </Pressable>
     <Pressable accessibilityRole="button" accessibilityLabel={`Pre-ride checklist, ${checked.length} of ${PRE_RIDE_CHECKS.length} checked`} style={[styles.card, styles.row, surface]} onPress={() => setSheet('checks')}>
-      <Icon name="checklist" size={24} color={theme.tint} />
+      <Icon name="checklist" size={24} color={theme.positive} />
       <ThemedText type="smallBold" style={{ flex: 1 }}>Before you ride</ThemedText>
-      <ThemedText type="small" themeColor="textSecondary">{checked.length}/{PRE_RIDE_CHECKS.length}</ThemedText><Icon name="chevron-down" color={theme.textSecondary} />
+      <ThemedText style={{ fontSize: 22, lineHeight: 28, color: theme.positive, fontVariant: ['tabular-nums'] }}>{checked.length}/{PRE_RIDE_CHECKS.length}</ThemedText><Icon name="chevron-down" color={theme.textSecondary} />
     </Pressable>
     <View style={[styles.card, styles.row, surface]}>
-      <View style={{ flex: 1 }}><ThemedText type="smallBold">Light map</ThemedText><ThemedText type="small" themeColor="textSecondary">Less animation · best for Nokia</ThemedText></View>
+      <View style={{ flex: 1 }}><ThemedText type="smallBold">Light map</ThemedText><ThemedText type="caption" themeColor="textSecondary">Less animation · best for Nokia</ThemedText></View>
       <Switch accessibilityLabel="Light map" value={plan.lightMap !== false} onValueChange={lightMap => onChange({ ...plan, lightMap })} trackColor={{ true: theme.tint }} />
     </View>
     <Sheet visible={sheet !== null} title={sheet === 'checks' ? 'Before you ride' : 'Departure'} onClose={() => setSheet(null)}
@@ -72,7 +81,7 @@ export function RidePreparation({ plan, elapsedMinutes, onChange }: { plan: Ride
   </>;
 }
 const styles = StyleSheet.create({
-  card: { padding: 12, borderRadius: 16, borderWidth: StyleSheet.hairlineWidth },
+  card: { padding: 16, borderRadius: 24, borderWidth: StyleSheet.hairlineWidth },
   row: { flexDirection: 'row', alignItems: 'center', gap: 12, minHeight: 48 },
   check: { flexDirection: 'row', alignItems: 'flex-start', gap: 12, paddingVertical: 12, borderBottomWidth: StyleSheet.hairlineWidth },
 });

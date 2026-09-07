@@ -13,16 +13,21 @@ SplashScreen.preventAutoHideAsync();
  * flashes an empty itinerary before hydrating.
  */
 function SplashGate() {
-  const { hydrated } = useTrip();
+  const { hydrated, storageError } = useTrip();
 
   useEffect(() => {
-    if (!hydrated) return;
+    if (!hydrated && !storageError) return;
     SplashScreen.hideAsync().catch(() => {
       // Already hidden — nothing to do.
     });
-  }, [hydrated]);
+  }, [hydrated, storageError]);
 
   return null;
+}
+
+function RideStack() {
+  const { trip } = useTrip();
+  return <Stack key={trip.id} screenOptions={{ headerShown: false }}><Stack.Screen name="(tabs)" /></Stack>;
 }
 
 export default function RootLayout() {
@@ -34,9 +39,7 @@ export default function RootLayout() {
       <TripProvider>
         <SplashGate />
         <StatusBar style={dark ? 'light' : 'dark'} />
-        <Stack screenOptions={{ headerShown: false }}>
-          <Stack.Screen name="(tabs)" />
-        </Stack>
+        <RideStack />
       </TripProvider>
     </ThemeProvider>
   );

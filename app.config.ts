@@ -1,21 +1,19 @@
 import type { ExpoConfig } from 'expo/config';
 
 const config: ExpoConfig = {
-  name: 'Pitstop',
-  slug: 'pitstop',
+  name: 'YamDrive',
+  slug: 'yamdrive',
   version: '1.0.0',
   orientation: 'default',
   icon: './assets/images/icon.png',
-  scheme: 'pitstop',
+  scheme: ['yamdrive', 'pitstop'],
   userInterfaceStyle: 'automatic',
   android: {
-    // Change this before you publish anything.
+    // Preserve installed-app identity and saved trips during the YamDrive rename.
     package: 'com.pitstop.app',
     adaptiveIcon: {
-      backgroundColor: '#0F766E',
+      backgroundColor: '#242523',
       foregroundImage: './assets/images/android-icon-foreground.png',
-      backgroundImage: './assets/images/android-icon-background.png',
-      monochromeImage: './assets/images/android-icon-monochrome.png',
     },
     permissions: ['ACCESS_COARSE_LOCATION', 'ACCESS_FINE_LOCATION'],
     predictiveBackGestureEnabled: false,
@@ -30,7 +28,7 @@ const config: ExpoConfig = {
     [
       'expo-splash-screen',
       {
-        backgroundColor: '#0F766E',
+        backgroundColor: '#242523',
         image: './assets/images/splash-icon.png',
         imageWidth: 76,
       },
@@ -39,7 +37,7 @@ const config: ExpoConfig = {
       'expo-location',
       {
         locationWhenInUsePermission:
-          'Pitstop uses your location to centre the map and measure distances to your stops.',
+          'YamDrive uses your location to centre the map and measure distances to your stops.',
       },
     ],
   ],
