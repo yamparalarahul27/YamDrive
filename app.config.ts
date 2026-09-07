@@ -1,27 +1,10 @@
 import type { ExpoConfig } from 'expo/config';
 
-/**
- * Two separate Google keys, because they are consumed in two different ways:
- *
- * - `GOOGLE_MAPS_API_KEY` is baked into AndroidManifest.xml at prebuild time and
- *   read by the native Maps SDK. Restrict it to Android apps (package name +
- *   signing certificate SHA-1).
- * - `EXPO_PUBLIC_GOOGLE_PLACES_API_KEY` is inlined into the JS bundle by Metro
- *   and sent as a header on Places REST calls. Android app restrictions do not
- *   apply to plain REST requests, so restrict this one by API instead (Places
- *   API only) and treat it as public — anything in the bundle is extractable.
- *
- * Both are optional. Without the Maps key the map renders blank; without the
- * Places key the app falls back to the OS geocoder for search and tells you
- * what is missing. See README.md.
- */
-const googleMapsApiKey = process.env.GOOGLE_MAPS_API_KEY ?? '';
-
 const config: ExpoConfig = {
   name: 'Pitstop',
   slug: 'pitstop',
   version: '1.0.0',
-  orientation: 'portrait',
+  orientation: 'default',
   icon: './assets/images/icon.png',
   scheme: 'pitstop',
   userInterfaceStyle: 'automatic',
@@ -35,9 +18,6 @@ const config: ExpoConfig = {
       monochromeImage: './assets/images/android-icon-monochrome.png',
     },
     permissions: ['ACCESS_COARSE_LOCATION', 'ACCESS_FINE_LOCATION'],
-    config: {
-      googleMaps: { apiKey: googleMapsApiKey },
-    },
     predictiveBackGestureEnabled: false,
   },
   web: {
@@ -46,6 +26,7 @@ const config: ExpoConfig = {
   },
   plugins: [
     'expo-router',
+    '@maplibre/maplibre-react-native',
     [
       'expo-splash-screen',
       {

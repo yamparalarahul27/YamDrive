@@ -1,25 +1,20 @@
+import { DEFAULT_RIDE_PLAN } from '@/lib/ride-plan';
+import { routeSignature } from '@/lib/route-geometry';
 import { useRouter } from 'expo-router';
-import { useCallback, useMemo } from 'react';
-import { Alert, Linking, ScrollView, StyleSheet, View } from 'react-native';
+import { useCallback, useMemo, useState } from 'react';
+import { Alert, Linking, Pressable, ScrollView, StyleSheet, View } from 'react-native';
 import { useSafeAreaInsets } from 'react-native-safe-area-context';
 
 import { Button } from '@/components/button';
 import { Icon } from '@/components/icon';
 import { IconButton } from '@/components/icon-button';
+import { Sheet } from '@/components/sheet';
 import { TextField } from '@/components/text-field';
 import { ThemedText } from '@/components/themed-text';
 import { Radius, Spacing } from '@/constants/theme';
 import { useTheme } from '@/hooks/use-theme';
 import { categoryMeta } from '@/lib/categories';
-import {
-  AVERAGE_SPEED_KPH,
-  estimatedDriveMinutes,
-  estimatedRoadKm,
-  formatDistanceKm,
-  formatDuration,
-  legDistancesKm,
-  totalStraightLineKm,
-} from '@/lib/geo';
+import { formatDistanceKm, formatDuration } from '@/lib/geo';
 import { directionsUrlTo, routeUrl } from '@/lib/navigation-links';
 import { useTrip } from '@/lib/trip-store';
 import type { Stop } from '@/lib/types';
@@ -31,16 +26,12 @@ export default function ItineraryScreen() {
   const { trip, removeStop, moveStop, renameTrip, clearStops } = useTrip();
 
   const stops = trip.stops;
+  const plan = trip.ridePlan ?? DEFAULT_RIDE_PLAN;
+  const roadRoute = trip.roadRoute?.signature === routeSignature(plan.origin, plan.destination, stops, plan.originPin, plan.destinationPin) ? trip.roadRoute : null;
 
-  const totals = useMemo(() => {
-    const straightLineKm = totalStraightLineKm(stops);
-    const roadKm = estimatedRoadKm(straightLineKm);
-    return {
-      legs: legDistancesKm(stops),
-      roadKm,
-      driveMinutes: estimatedDriveMinutes(roadKm),
-    };
-  }, [stops]);
+  const [expanded, setExpanded] = useState<string | null>(null);
+  const [optionsOpen, setOptionsOpen] = useState(false);
+  const [nameDraft, setNameDraft] = useState(trip.name);
 
   const route = useMemo(() => routeUrl(stops), [stops]);
 
@@ -84,255 +75,73 @@ export default function ItineraryScreen() {
     ]);
   }, [stops.length, clearStops]);
 
-  return (
-    <ScrollView
-      style={[styles.root, { backgroundColor: theme.background }]}
-      contentContainerStyle={[
-        styles.content,
-        { paddingTop: insets.top + Spacing.three, paddingBottom: Spacing.five },
-      ]}>
-      <TextField
-        label="Trip"
-        value={trip.name}
-        onChangeText={renameTrip}
-        placeholder="Weekend to Coorg"
-        autoCapitalize="sentences"
-      />
-
-      {stops.length === 0 ? (
-        <View style={[styles.empty, { borderColor: theme.border }]}>
-          <Icon name="routes" size={40} color={theme.textSecondary} />
-          <ThemedText type="smallBold">No stops yet</ThemedText>
-          <ThemedText type="small" themeColor="textSecondary" style={styles.centeredText}>
-            Long-press anywhere on the map to drop a stop, or use the Fuel, Food and Stay
-            buttons to search around where you are looking.
-          </ThemedText>
-          <Button label="Open the map" icon="map-outline" onPress={() => router.navigate('/')} />
-        </View>
-      ) : (
-        <>
-          <View
-            style={[
-              styles.summaryCard,
-              { backgroundColor: theme.backgroundElement, borderColor: theme.border },
-            ]}>
-            <View style={styles.summaryRow}>
-              <Summary label="Stops" value={String(stops.length)} />
-              <Summary label="Distance" value={formatDistanceKm(totals.roadKm)} />
-              <Summary label="Driving" value={formatDuration(totals.driveMinutes)} />
-            </View>
-            <ThemedText type="small" themeColor="textSecondary">
-              Estimates only: straight-line distance plus 25% for road winding, at{' '}
-              {AVERAGE_SPEED_KPH} km/h and excluding time spent at stops. Open the route in
-              Google Maps for real numbers.
-            </ThemedText>
-          </View>
-
-          <View style={styles.list}>
-            {stops.map((stop, index) => {
-              const meta = categoryMeta(stop.category);
-              const isFirst = index === 0;
-              const isLast = index === stops.length - 1;
-
-              return (
-                <View
-                  key={stop.id}
-                  style={[
-                    styles.card,
-                    { backgroundColor: theme.backgroundElement, borderColor: theme.border },
-                  ]}>
-                  {!isFirst ? (
-                    <ThemedText type="small" themeColor="textSecondary" style={styles.legLabel}>
-                      {formatDistanceKm(estimatedRoadKm(totals.legs[index]))} from stop {index}
-                    </ThemedText>
-                  ) : null}
-
-                  <View style={styles.cardRow}>
-                    <View style={[styles.badge, { backgroundColor: meta.color }]}>
-                      <ThemedText type="smallBold" style={styles.badgeText}>
-                        {index + 1}
-                      </ThemedText>
-                    </View>
-
-                    <View style={styles.cardText}>
-                      <ThemedText type="smallBold">{stop.name}</ThemedText>
-                      <View style={styles.metaRow}>
-                        <Icon name={meta.icon} size={13} color={meta.color} />
-                        <ThemedText type="small" themeColor="textSecondary">
-                          {meta.label}
-                        </ThemedText>
-                      </View>
-                      {stop.address ? (
-                        <ThemedText type="small" themeColor="textSecondary" numberOfLines={2}>
-                          {stop.address}
-                        </ThemedText>
-                      ) : null}
-                      {stop.note ? (
-                        <ThemedText type="small" style={{ color: theme.tint }}>
-                          {stop.note}
-                        </ThemedText>
-                      ) : null}
-                    </View>
-                  </View>
-
-                  <View style={[styles.actions, { borderTopColor: theme.border }]}>
-                    <IconButton
-                      name="arrow-up"
-                      accessibilityLabel={`Move ${stop.name} earlier`}
-                      onPress={() => moveStop(stop.id, -1)}
-                      disabled={isFirst}
-                      size={20}
-                    />
-                    <IconButton
-                      name="arrow-down"
-                      accessibilityLabel={`Move ${stop.name} later`}
-                      onPress={() => moveStop(stop.id, 1)}
-                      disabled={isLast}
-                      size={20}
-                    />
-                    <View style={styles.spacer} />
-                    <IconButton
-                      name="navigation-variant-outline"
-                      accessibilityLabel={`Navigate to ${stop.name}`}
-                      onPress={() => openUrl(directionsUrlTo(stop))}
-                      color={theme.tint}
-                      size={20}
-                    />
-                    <IconButton
-                      name="trash-can-outline"
-                      accessibilityLabel={`Remove ${stop.name}`}
-                      onPress={() => handleDelete(stop)}
-                      color={theme.danger}
-                      size={20}
-                    />
-                  </View>
-                </View>
-              );
-            })}
-          </View>
-
-          <View style={styles.footer}>
-            <Button
-              label="Open route in Google Maps"
-              icon="navigation-variant"
-              onPress={handleOpenRoute}
-              disabled={route === null}
-              stretch
-            />
-            {route === null ? (
-              <ThemedText type="small" themeColor="textSecondary" style={styles.centeredText}>
-                Add a second stop to get a route.
-              </ThemedText>
-            ) : null}
-            <Button
-              label="Clear all stops"
-              icon="delete-outline"
-              variant="danger"
-              onPress={handleClear}
-            />
-          </View>
-        </>
-      )}
+  const surface = { backgroundColor: theme.backgroundElement, borderColor: theme.border };
+  return <View style={{ flex: 1, backgroundColor: theme.background }}>
+    <ScrollView contentContainerStyle={[styles.content, { paddingTop: insets.top + Spacing.three,
+      paddingLeft: insets.left + Spacing.three, paddingRight: insets.right + Spacing.three }]}>
+      <View style={styles.row}>
+        <View style={{ flex: 1 }}><ThemedText type="subtitle">Trip</ThemedText>
+          <ThemedText type="small" themeColor="textSecondary" numberOfLines={1}>{trip.name}</ThemedText></View>
+        <IconButton name="tune-variant" accessibilityLabel="Trip options" onPress={() => { setNameDraft(trip.name); setOptionsOpen(true); }} />
+      </View>
+      <View style={[styles.card, surface]}>
+        <ThemedText type="smallBold">{plan.origin} → {plan.destination}</ThemedText>
+        <ThemedText type="small" themeColor="textSecondary">{stops.length} saved {stops.length === 1 ? 'stop' : 'stops'}{roadRoute ? ` · ${formatDistanceKm(roadRoute.distanceKm)}` : ''}</ThemedText>
+        {roadRoute ? <ThemedText type="small" themeColor="textSecondary">{formatDuration(roadRoute.durationMinutes)} estimated · excludes breaks and traffic</ThemedText>
+          : stops.length ? <ThemedText type="small" themeColor="textSecondary">Update the map route to include these stops.</ThemedText> : null}
+      </View>
+      {stops.length === 0 ? <View style={styles.empty}>
+        <Icon name="map-marker-outline" size={40} color={theme.tint} />
+        <ThemedText type="smallBold">No saved stops</ThemedText>
+        <ThemedText type="small" themeColor="textSecondary" style={{ textAlign: 'center' }}>Choose places near break pins, or hold the map to add a stop.</ThemedText>
+        <Button label="Find stops" icon="map-outline" onPress={() => router.navigate('/')} />
+      </View> : <>
+        <Button label="View map" icon="map-outline" onPress={() => router.navigate('/')} />
+        <ThemedText type="small" themeColor="textSecondary">Visit order · tap a stop for details</ThemedText>
+        {stops.map((stop, index) => {
+          const meta = categoryMeta(stop.category), open = expanded === stop.id;
+          return <View key={stop.id} style={[styles.card, surface]}>
+            <Pressable accessibilityRole="button" accessibilityLabel={`${index + 1}. ${stop.name}, ${meta.label}`}
+              accessibilityState={{ expanded: open }} style={styles.stopRow} onPress={() => setExpanded(open ? null : stop.id)}>
+              <View style={[styles.badge, { backgroundColor: meta.color }]}><ThemedText type="smallBold" style={{ color: '#fff' }}>{index + 1}</ThemedText></View>
+              <View style={{ flex: 1, gap: 4 }}><ThemedText type="smallBold" numberOfLines={open ? undefined : 2}>{stop.name}</ThemedText>
+                <View style={styles.meta}><Icon name={meta.icon} size={16} color={meta.color} /><ThemedText type="small" themeColor="textSecondary">{meta.label}</ThemedText></View></View>
+              <Icon name={open ? 'chevron-up' : 'chevron-down'} color={theme.textSecondary} />
+            </Pressable>
+            {open ? <>
+              {stop.address ? <ThemedText type="small" themeColor="textSecondary">{stop.address}</ThemedText> : null}
+              {stop.note ? <ThemedText type="small">{stop.note}</ThemedText> : null}
+              <View style={[styles.actions, { borderColor: theme.border }]}>
+                <IconButton name="arrow-up" accessibilityLabel={`Move ${stop.name} earlier`} disabled={index === 0} onPress={() => moveStop(stop.id, -1)} />
+                <IconButton name="arrow-down" accessibilityLabel={`Move ${stop.name} later`} disabled={index === stops.length - 1} onPress={() => moveStop(stop.id, 1)} />
+                <View style={{ flex: 1 }} />
+                <IconButton name="navigation-variant-outline" accessibilityLabel={`Open ${stop.name} in Google Maps`} color={theme.tint} onPress={() => openUrl(directionsUrlTo(stop))} />
+                <IconButton name="trash-can-outline" accessibilityLabel={`Remove ${stop.name}`} color={theme.danger} onPress={() => handleDelete(stop)} />
+              </View>
+            </> : null}
+          </View>;
+        })}
+      </>}
     </ScrollView>
-  );
-}
-
-function Summary({ label, value }: { label: string; value: string }) {
-  return (
-    <View style={styles.summaryItem}>
-      <ThemedText type="small" themeColor="textSecondary">
-        {label}
-      </ThemedText>
-      <ThemedText type="smallBold" style={styles.summaryValue}>
-        {value}
-      </ThemedText>
-    </View>
-  );
+    <Sheet visible={optionsOpen} title="Trip options" onClose={() => setOptionsOpen(false)}>
+      <TextField label="Trip name" value={nameDraft} onChangeText={setNameDraft} maxLength={100} autoCapitalize="sentences" />
+      <Button label="Save name" icon="check" disabled={!nameDraft.trim()} onPress={() => { renameTrip(nameDraft.trim()); setOptionsOpen(false); }} />
+      {stops.length > 0 ? <>
+        <Button label="Open saved stops in Google Maps" icon="navigation-variant" variant="secondary" disabled={!route} onPress={handleOpenRoute} />
+        <ThemedText type="small" themeColor="textSecondary">{route ? 'Saved stops only; trip endpoints are not included.' : 'Add a second saved stop to open a route.'}</ThemedText>
+        <Button label="Clear stops" icon="trash-can-outline" variant="danger" onPress={handleClear} />
+      </> : null}
+    </Sheet>
+  </View>;
 }
 
 const styles = StyleSheet.create({
-  root: {
-    flex: 1,
-  },
-  content: {
-    paddingHorizontal: Spacing.three,
-    gap: Spacing.three,
-  },
-  centeredText: {
-    textAlign: 'center',
-  },
-  empty: {
-    alignItems: 'center',
-    gap: Spacing.two,
-    paddingVertical: Spacing.five,
-    paddingHorizontal: Spacing.three,
-    borderRadius: Radius.lg,
-    borderWidth: StyleSheet.hairlineWidth,
-    borderStyle: 'dashed',
-  },
-  summaryCard: {
-    gap: Spacing.two,
-    padding: Spacing.three,
-    borderRadius: Radius.lg,
-    borderWidth: StyleSheet.hairlineWidth,
-  },
-  summaryRow: {
-    flexDirection: 'row',
-    gap: Spacing.three,
-  },
-  summaryItem: {
-    flex: 1,
-    gap: 1,
-  },
-  summaryValue: {
-    fontSize: 17,
-    lineHeight: 22,
-  },
-  list: {
-    gap: Spacing.two,
-  },
-  card: {
-    padding: Spacing.two,
-    borderRadius: Radius.lg,
-    borderWidth: StyleSheet.hairlineWidth,
-    gap: Spacing.two,
-  },
-  legLabel: {
-    paddingHorizontal: Spacing.one,
-  },
-  cardRow: {
-    flexDirection: 'row',
-    gap: Spacing.two,
-  },
-  badge: {
-    width: 28,
-    height: 28,
-    alignItems: 'center',
-    justifyContent: 'center',
-    borderRadius: Radius.pill,
-  },
-  badgeText: {
-    color: '#FFFFFF',
-  },
-  cardText: {
-    flex: 1,
-    gap: 1,
-  },
-  metaRow: {
-    flexDirection: 'row',
-    alignItems: 'center',
-    gap: Spacing.one,
-  },
-  actions: {
-    flexDirection: 'row',
-    alignItems: 'center',
-    borderTopWidth: StyleSheet.hairlineWidth,
-    paddingTop: Spacing.one,
-  },
-  spacer: {
-    flex: 1,
-  },
-  footer: {
-    gap: Spacing.two,
-  },
+  content: { paddingHorizontal: Spacing.three, paddingBottom: Spacing.five, gap: 12 },
+  row: { flexDirection: 'row', alignItems: 'center', gap: 12 },
+  card: { padding: Spacing.three, borderRadius: Radius.lg, borderWidth: StyleSheet.hairlineWidth, gap: 12 },
+  empty: { alignItems: 'center', gap: 16, paddingVertical: 32, paddingHorizontal: 20 },
+  stopRow: { flexDirection: 'row', alignItems: 'center', minHeight: 52, gap: 12 },
+  badge: { width: 28, height: 28, borderRadius: Radius.pill, alignItems: 'center', justifyContent: 'center' },
+  meta: { flexDirection: 'row', alignItems: 'center', gap: 6 },
+  actions: { flexDirection: 'row', alignItems: 'center', borderTopWidth: StyleSheet.hairlineWidth, paddingTop: 8 },
 });

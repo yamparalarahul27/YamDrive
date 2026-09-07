@@ -1,3 +1,4 @@
+import type { RoadRoute } from '@/lib/route-geometry';
 import {
   createContext,
   useCallback,
@@ -9,6 +10,7 @@ import {
   type ReactNode,
 } from 'react';
 
+import { parseRidePlan, type RidePlan } from '@/lib/ride-plan';
 import { loadTrip, saveTrip } from '@/lib/storage';
 import type { Stop, StopCategory, Trip } from '@/lib/types';
 
@@ -37,7 +39,9 @@ type Action =
   | { type: 'removeStop'; id: string }
   | { type: 'moveStop'; id: string; offset: number }
   | { type: 'renameTrip'; name: string }
-  | { type: 'clearStops' };
+  | { type: 'clearStops' }
+  | { type: 'setRidePlan'; plan: RidePlan }
+  | { type: 'setRoadRoute'; route: RoadRoute };
 
 type State = {
   trip: Trip;
@@ -91,6 +95,12 @@ function reducer(state: State, action: Action): State {
     case 'renameTrip':
       return touch(state.trip.stops, action.name);
 
+    case 'setRoadRoute':
+      return { ...state, trip: { ...state.trip, roadRoute: action.route, updatedAt: Date.now() } };
+
+    case 'setRidePlan':
+      return { ...state, trip: { ...state.trip, ridePlan: parseRidePlan(action.plan), updatedAt: Date.now() } };
+
     case 'clearStops':
       return touch([]);
 
@@ -108,6 +118,8 @@ type TripContextValue = {
   moveStop: (id: string, offset: number) => void;
   renameTrip: (name: string) => void;
   clearStops: () => void;
+  setRidePlan: (plan: RidePlan) => void;
+  setRoadRoute: (route: RoadRoute) => void;
 };
 
 const TripContext = createContext<TripContextValue | null>(null);
@@ -150,6 +162,8 @@ export function TripProvider({ children }: { children: ReactNode }) {
     [],
   );
   const renameTrip = useCallback((name: string) => dispatch({ type: 'renameTrip', name }), []);
+  const setRoadRoute = useCallback((route: RoadRoute) => dispatch({ type: 'setRoadRoute', route }), []);
+  const setRidePlan = useCallback((plan: RidePlan) => dispatch({ type: 'setRidePlan', plan }), []);
   const clearStops = useCallback(() => dispatch({ type: 'clearStops' }), []);
 
   const value = useMemo<TripContextValue>(
@@ -162,8 +176,10 @@ export function TripProvider({ children }: { children: ReactNode }) {
       moveStop,
       renameTrip,
       clearStops,
+      setRidePlan,
+      setRoadRoute,
     }),
-    [state.trip, state.hydrated, addStop, updateStop, removeStop, moveStop, renameTrip, clearStops],
+    [state.trip, state.hydrated, addStop, updateStop, removeStop, moveStop, renameTrip, clearStops, setRidePlan, setRoadRoute],
   );
 
   return <TripContext.Provider value={value}>{children}</TripContext.Provider>;

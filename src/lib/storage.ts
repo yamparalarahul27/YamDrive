@@ -1,3 +1,6 @@
+import { parseRoadRoute } from '@/lib/route-geometry';
+import { parseRidePlan } from '@/lib/ride-plan';
+
 import AsyncStorage from '@react-native-async-storage/async-storage';
 
 import { isStopCategory } from '@/lib/categories';
@@ -46,6 +49,8 @@ function parseTrip(value: unknown): Trip | null {
     id: raw.id,
     name: typeof raw.name === 'string' && raw.name !== '' ? raw.name : 'My trip',
     stops,
+    ridePlan: parseRidePlan(raw.ridePlan),
+    roadRoute: parseRoadRoute(raw.roadRoute),
     updatedAt: isFiniteNumber(raw.updatedAt) ? raw.updatedAt : Date.now(),
   };
 }

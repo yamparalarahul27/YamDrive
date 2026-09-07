@@ -1,5 +1,5 @@
 import type { ReactNode } from 'react';
-import { KeyboardAvoidingView, Modal, Platform, Pressable, StyleSheet, View } from 'react-native';
+import { KeyboardAvoidingView, Modal, Platform, Pressable, ScrollView, StyleSheet, useWindowDimensions, View } from 'react-native';
 import { useSafeAreaInsets } from 'react-native-safe-area-context';
 
 import { IconButton } from '@/components/icon-button';
@@ -26,10 +26,13 @@ export type SheetProps = {
 export function Sheet({ visible, onClose, title, subtitle, children, footer }: SheetProps) {
   const theme = useTheme();
   const insets = useSafeAreaInsets();
+  const { height, width } = useWindowDimensions();
+  const landscape = width > height;
 
   return (
     <Modal
       visible={visible}
+      supportedOrientations={['portrait', 'landscape-left', 'landscape-right']}
       transparent
       animationType="slide"
       statusBarTranslucent
@@ -42,11 +45,12 @@ export function Sheet({ visible, onClose, title, subtitle, children, footer }: S
           style={styles.backdrop}
           onPress={onClose}
         />
-        <KeyboardAvoidingView behavior={Platform.OS === 'ios' ? 'padding' : undefined}>
+        <KeyboardAvoidingView style={landscape ? { width: Math.min(480, width - insets.left - insets.right), alignSelf: 'flex-end', marginRight: insets.right } : undefined} behavior={Platform.OS === 'ios' ? 'padding' : undefined}>
           <View
             style={[
               styles.sheet,
               {
+                maxHeight: height - insets.top - 8,
                 backgroundColor: theme.background,
                 borderColor: theme.border,
                 paddingBottom: insets.bottom + Spacing.three,
@@ -66,7 +70,7 @@ export function Sheet({ visible, onClose, title, subtitle, children, footer }: S
               <IconButton name="close" accessibilityLabel="Close" onPress={onClose} size={20} />
             </View>
 
-            {children}
+            {landscape ? <ScrollView style={{ flexShrink: 1 }} nestedScrollEnabled keyboardShouldPersistTaps="handled">{children}</ScrollView> : children}
 
             {footer ? <View style={styles.footer}>{footer}</View> : null}
           </View>

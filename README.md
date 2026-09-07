@@ -1,188 +1,163 @@
 # Pitstop
 
-An Android road-trip planner built with React Native and Expo. Drop stops on a
-Google map, find petrol along the route, order the stops into an itinerary,
-then hand the whole route to Google Maps for turn-by-turn navigation.
+An Android motorcycle trip planner built with React Native, Expo and TypeScript.
+MapLibre displays OpenStreetMap tiles inside the app. Valhalla calculates a road
+route through your start, saved stops and destination. No Google API keys or
+billing account are needed for the default personal-use setup.
 
-> The GitHub repo is still named `App-Capture-Exp` after an unrelated tool that
-> used to live here. That tool was removed; this app is now the whole repo.
-> Renaming the repo is a one-click change in GitHub's settings.
+## Using it
 
-This is the first working slice: the map, the stop list, and the plumbing
-around them. See [What is not here yet](#what-is-not-here-yet).
+1. In **Ride Plan**, set your start/destination, estimated average moving speed,
+   rest interval, stop duration and optional fuel interval. Defaults describe
+   the user's approximate 600 km Guntur–Bangalore ride.
+2. In **Map**, open **Route & stops**, then tap **Build route**. Address lookup uses Android's geocoder
+   and needs location permission. The route is calculated for a motorcycle.
+3. The green line follows the roads. A/B are endpoints, R/F markers are planned
+   rest/fuel targets, and S markers are your saved stops. Targets use road
+   distance and your planning pace, not live traffic or engine temperature.
+4. Tap a target, then **Find stops** and choose **Break** or **Fuel**. Results are mapped places
+   within a 5 km straight-line radius, not verified detour distances. Tap + to
+   add a candidate or tap a result to see it on the map.
+5. Reorder saved stops in **Trip**, then calculate again to include them. Existing
+   routes are hidden when endpoints or stop order change, so old routing isn't
+   mistaken for an updated trip. Long-press the map for a custom stop.
 
-## What it does
+The route geometry, chosen stops and ride settings persist on the phone. Map
+viewing and new searches require internet. The route estimate has no live traffic;
+stop opening hours, access, fuel availability and motorcycle road restrictions
+should be reviewed before travel. At most 60 planning targets are drawn, and the
+public route integration allows 18 intermediate stops. Map pins and coordinates
+are not guaranteed safe stopping locations.
 
-- **Map first.** Full-screen Google Maps with your location, your stops as
-  numbered pins colour-coded by kind, and a line joining them in order.
-- **Drop a stop.** Long-press anywhere on the map. The address is reverse
-  geocoded to prefill the name. Tapping a Google POI label works too.
-- **Find petrol (and food, breaks, hotels, sights).** One-tap category search
-  around whatever part of the map you are looking at. Results appear as pins
-  and as a list with distances; add any of them to the trip.
-- **Search by name.** Find a town, landmark or address and add it as a stop.
-- **Build the itinerary.** Reorder stops, edit or delete them, add notes like
-  "fill up here — next pump is 90 km", and see per-leg and total distance with
-  a rough drive time.
-- **Navigate.** Open a single stop, or the whole ordered route, in Google Maps.
-- **Survives restarts.** The trip is saved to device storage.
+This version has no offline map download, spoken navigation, automatic rerouting,
+background break alarms or engine/fuel telemetry. Google Maps handoff remains
+optional; it is not required for in-app route viewing.
 
-## Stack
+## Free public services
 
-React Native, via Expo.
+- Map display: MapLibre React Native v11 with OpenStreetMap standard raster tiles.
+- Motorcycle routes: FOSSGIS public Valhalla service.
+- Fuel, food, rest, stays and sights: Overpass API / OpenStreetMap.
+- Address lookup: device geocoder.
 
-Those are not alternatives to each other: Expo is a framework built on top of
-React Native, and it is the setup React Native's own documentation recommends
-by default. `react-native` is a direct dependency here and the UI is built from
-React Native's own `View`, `Text`, `Pressable` and `Modal`. What Expo adds is
-the tooling around it — native configuration in `app.config.ts` instead of
-hand-edited Gradle and manifest files, config plugins, cloud builds, and the
-`expo-*` module library.
+This is a small personal-use integration, not an unlimited hosted service. Public
+servers may throttle or fail. Requests have an identifiable User-Agent, 35-second
+timeout, sequential execution with at least 1.5 seconds between uncached calls,
+a bounded 24-hour cache, and a 60-second cooldown for rate-limit/service-busy
+responses. Public POI searches are explicit, with no autocomplete, polling or route-wide
+bulk POI extraction. Native map HTTP caching remains enabled. No tile prefetch or
+offline-download feature is exposed. Map attribution and a report-issue link stay
+visible. Queries and route coordinates are sent to the providers to fulfill the
+requested action. Use a suitable hosted/self-hosted service before scaling.
 
-It is not a one-way door. `npx expo prebuild` generates the real `android/`
-directory whenever you need to write native Kotlin or add a library that has no
-config plugin.
+Optional endpoint overrides are in `.env.example` and `src/lib/open-services.ts`.
+Changing an endpoint via Expo environment variables requires rebuilding.
 
-| Piece | Choice |
-| --- | --- |
-| Runtime | React Native 0.86, New Architecture, Hermes |
-| Framework | Expo SDK 57 |
-| Language | TypeScript, `strict` |
-| Routing | expo-router (file-based) |
-| Map | `react-native-maps` on the Google provider |
-| Location | `expo-location` |
-| Storage | `@react-native-async-storage/async-storage` |
-| State | React context + reducer (`src/lib/trip-store.tsx`) |
-| Icons | `@expo/vector-icons` (Material Community) |
+Policies and references:
+- https://operations.osmfoundation.org/policies/tiles/
+- https://routing.openstreetmap.de/about.html
+- https://github.com/valhalla/valhalla
+- https://wiki.openstreetmap.org/wiki/Overpass_API
+- https://maplibre.org/maplibre-react-native/docs/setup/expo/
 
-`react-native-maps` is used rather than Expo's own `expo-maps` because
-`expo-maps` is still published as alpha and documented as subject to breaking
-changes. Swapping later is contained to `src/components/map-markers.tsx` and
-the map screen.
+## Build and verify
 
-## Requirements
-
-- Node.js 22+
-- An Android device or emulator
-- A Google Cloud project with billing enabled, for the API keys below
-
-## Google API keys
-
-The app needs two keys, because they are used in two different ways. Both are
-optional for a first run — the app degrades and tells you what is missing —
-but the map itself will be blank without the first one.
-
-| Env var | Used by | Restrict it to | Needed for |
-| --- | --- | --- | --- |
-| `GOOGLE_MAPS_API_KEY` | The native Maps SDK, via `AndroidManifest.xml` | Android apps: package name + signing cert SHA-1 | The map rendering at all |
-| `EXPO_PUBLIC_GOOGLE_PLACES_API_KEY` | Places API (New) REST calls from JS | The Places API only | Category and text search |
-
-Set up:
-
-1. In the [Google Cloud console](https://console.cloud.google.com/), enable
-   **Maps SDK for Android** and **Places API (New)**.
-2. Create the keys and apply the restrictions in the table above.
-3. `cp .env.example .env` and fill both in.
-
-Two caveats worth knowing before you ship this:
-
-- `EXPO_PUBLIC_` variables are **inlined into the JS bundle** at build time.
-  Anyone with the APK can read that key. Restricting it to the Places API caps
-  the damage; the real fix is to proxy Places calls through a backend that
-  holds the key. Do that before a public release.
-- An **Android-restricted key will be rejected** by the Places REST endpoint,
-  which is why these are separate variables. If nearby search returns a
-  permission error, that mismatch is the usual cause — the app surfaces
-  Google's own message in the results sheet so you can see which it is.
-
-Without a Places key, text search still works: it falls back to the operating
-system's geocoder, which resolves addresses and place names to coordinates but
-returns no names, ratings or opening hours. Category search needs the key and
-says so.
-
-## Running it
+Requires Node 22+, Java 17 and an Android SDK. This workspace has the SDK installed
+at `/opt/homebrew/share/android-commandlinetools`; set `ANDROID_HOME` for another
+location. The script also detects Homebrew Java 17.
 
 ```bash
-npm install
+npm ci
+npm run check
+npm run build:apk
 ```
 
-Then build a **development build**. Expo Go cannot carry your own
-`GOOGLE_MAPS_API_KEY` — that key is written into `AndroidManifest.xml` when the
-app is built, and Expo Go ships a prebuilt manifest — so a development build is
-required to see your own map tiles and your own quota. Build it once, then
-iterate over the JS as usual:
+`dist/pitstop-test.apk` includes 32-bit and 64-bit ARM code plus bundled JavaScript,
+so it runs without Metro or the Mac. It uses the generated debug signing identity
+for personal testing. Configure a production signing identity before publication.
+MapLibre requires a custom build and does not run inside Expo Go.
 
-```bash
-# Local build: needs Android Studio and a device or emulator attached
-npx expo run:android
+Tests cover distance math, route link encoding, schedule boundaries, polyline6
+decoding, break-point interpolation, stale-route signatures and saved-route
+validation. Device checks are still required for native map rendering and services.
 
-# Or build in the cloud with EAS instead
-npx eas build --profile development --platform android
-```
+### Map display
 
-After that, `npm run android` starts the dev server against the installed
-build.
+Use the motorcycle **Ride view** button to hide tabs and setup controls; X or Android Back exits it.
+The map supports portrait and landscape. Enable Android **Auto-rotate** to follow
+the phone orientation. Landscape places the route summary on the left, map
+controls on the right, and setup in a scrollable side panel.
 
-Changing `.env`, `app.config.ts`, or any native dependency means rebuilding —
-`GOOGLE_MAPS_API_KEY` is baked into the manifest at build time, not read at
-runtime.
+Compact map actions show their labels on long-press. A short tap performs the
+action. Screen readers announce every icon label.
 
-## Checks
+### Route endpoints
 
-```bash
-npm run check      # typecheck + lint + tests
-npm run typecheck  # tsc, app and test suites
-npm run lint
-npm test           # Node's test runner over the pure logic
-```
+In Ride settings, tap Start or Destination to search (3+ characters), preview a
+result, use current location, or tap an exact map pin. Confirm the pin, then Save
+settings. Build/update the route to use it. Selected coordinates persist and take
+priority over address lookup. Changing either pin invalidates the cached route.
+Address suggestions use Android geocoding and require location permission; manual
+pins do not.
 
-## Layout
+### Live speed and pause
 
-```
-app.config.ts              Expo config; reads the Maps key from the environment
-src/app/
-  _layout.tsx              Root stack, theme, trip provider, splash gate
-  (tabs)/_layout.tsx       Bottom tabs
-  (tabs)/index.tsx         Map screen
-  (tabs)/itinerary.tsx     Trip screen
-src/lib/
-  types.ts                 Coordinate, Stop, Trip, StopCategory
-  categories.ts            Per-category label, icon, colour, search query
-  geo.ts                   Distance, formatting, map regions
-  places.ts                Places API (New) + OS geocoder fallback
-  navigation-links.ts      Google Maps handoff URLs
-  storage.ts               AsyncStorage load/save with validation
-  trip-store.tsx           Trip context and reducer
-src/components/            Sheets, markers, buttons, fields
-test/                      Node tests for geo and navigation-links
-```
+Set lower/upper pace in Ride Plan → Ride settings, then tap Play on the map badge. GPS speed is
+yellow below, green within, and red above that preference. These colours are not
+road speed limits or engine-health readings. Poor or stale GPS shows a neutral dash.
+Pause stops GPS and freezes active ride time; Resume continues it; End resets it.
+Leaving the map, backgrounding, or locking the phone automatically pauses the ride.
+The timer is session-only; the pace range persists. No background tracking is used.
 
-### Things you will probably want to change
+### Demo ride
 
-- `android.package` in `app.config.ts` is `com.pitstop.app`. Change it before
-  publishing.
-- `CATEGORIES` in `src/lib/categories.ts` holds the search text per category.
-  The fuel query is `"petrol pump"`, which is right for India and weaker in
-  places that say "gas station". Tune per region.
-- `ROAD_WINDING_FACTOR` and `AVERAGE_SPEED_KPH` in `src/lib/geo.ts` drive the
-  distance and time estimates.
+Map → Route & stops → Demo ride plays the current road route with artificial
+speed values and 100× movement. It cycles below/within/above range and a stop
+every 32 seconds. The default 40–60 demo range is illustrative, not saved as a
+riding recommendation. DEMO stays visible; GPS is disabled during playback.
+Pause freezes both playback and its timer; Resume continues. End demo resets the
+session without changing your route, stops, or settings.
 
-## What is not here yet
+### Navigation view
 
-Known gaps, roughly in the order they would hurt:
+Update the route once to load turn instructions, then start a ride or demo.
+The heading arrow and heading-up camera follow movement; pan to browse and tap
+the location button to follow again. The banner shows the next instruction and
+distance along the road line. Old saved routes remain viewable but need Update
+route to add instructions. Poor/stale GPS hides turn advice; more than 75 m off
+the route shows an off-route message. Matching uses the nearest road segment,
+not lane-level positioning; intersections and parallel roads can be ambiguous.
+No voice, automatic rerouting, or background guidance is included.
 
-- **Distances are estimates, not routing.** Everything is straight-line
-  haversine distance plus 25% for road winding, at an assumed 45 km/h. Real
-  numbers need the Google Directions API, which would also give a road-shaped
-  polyline instead of the straight lines drawn between stops today.
-- **One trip.** The data model is already keyed by trip id, but there is no
-  trip list or switcher.
-- **Reordering is by arrow buttons**, not drag and drop.
-- **Google Maps takes 9 waypoints.** Longer trips prompt before opening a
-  truncated route rather than splitting into legs.
-- **No offline maps, no fuel prices, no range or fuel-economy planning.**
-- **Tests cover the pure logic only** (`geo.ts`, `navigation-links.ts`) —
-  those run under Node without a bundler. Component and store tests would need
-  `jest-expo` to resolve the `@/` alias and mock the native modules.
-- **Routes that cross the antimeridian** would compute a globe-spanning
-  bounding box in `regionForCoordinates`.
+### India departure and preparation
+
+Ride Plan → Set departure accepts 24-hour IST time, with 04:00, 04:30, 05:00 and
+06:00 shortcuts. The break schedule and arrival show estimated clock times,
+including planned breaks and `(+1d)`/`(+2d)` when crossing midnight. This is a
+wall-clock plan in India (UTC+05:30), independent of the phone timezone; it does
+not schedule an alarm, use live traffic, or assume an early start is safer.
+
+Before you ride opens a saved, manually checked list grouped into Before ride
+day and Before departure. It covers fuel readiness, tyres, brakes/pads,
+chain/alignment, oil/leaks, controls/lights, luggage, supplies, route and rest.
+It is based on the Hunter owner's manual and MSF T-CLOCS, with links in the app.
+No mechanical condition is inferred from a tick. Reset checks for each ride;
+changing departure time or route endpoints clears them. Existing plans migrate
+without requiring a departure time or pre-filled checks.
+
+### Low-memory Android support
+
+Light map is on unless explicitly disabled in Ride Plan. It caps map rendering
+at 30 FPS, follows without animated camera transitions and only rotates the
+camera after a 15-degree heading change. Speed still updates at 1 Hz. Static
+map elements are memoized; only the drawn line is simplified (5 m tolerance).
+Full coordinates and maneuver indices remain intact for navigation. Route
+matching uses 64-segment bounding blocks near the GPS fix, with a full-scan
+fallback when farther off route. Route interpolation uses binary search.
+
+`npm run build:apk` enables R8 code and resource shrinking and produces the
+universal ARM APK. `npm run build:apk -- arm32` and `-- arm64` produce separate
+`dist/pitstop-arm32.apk` and `dist/pitstop-arm64.apk` packages. Verify the target
+phone's supported ABIs before choosing one; a 64-bit CPU may run 32-bit Android.
+Minimum Android API remains 24. Realme demo checks do not establish Nokia
+frame rate, memory or battery endurance; test on the target device.
