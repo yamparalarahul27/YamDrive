@@ -103,7 +103,7 @@ export function ResultsSheet({
                     </ThemedText>
                   ) : null}
                   <ThemedText type="small" themeColor="textSecondary">
-                    {formatDistanceKm(distance)} away
+                    {formatDistanceKm(distance)} straight-line distance
                     {place.rating !== undefined ? ` · ★ ${place.rating.toFixed(1)}` : ''}
                   </ThemedText>
                 </View>

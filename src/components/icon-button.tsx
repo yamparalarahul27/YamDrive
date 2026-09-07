@@ -1,5 +1,6 @@
 import { Pressable, StyleSheet, type StyleProp, type ViewStyle } from 'react-native';
 
+import { showActionHint } from '@/lib/action-hint';
 import { Icon, type IconName } from '@/components/icon';
 import { MinTouchSize, Radius } from '@/constants/theme';
 import { useTheme } from '@/hooks/use-theme';
@@ -34,8 +35,10 @@ export function IconButton({
       accessibilityRole="button"
       accessibilityLabel={accessibilityLabel}
       accessibilityState={{ disabled }}
+      accessibilityHint="Hold to show label"
       disabled={disabled}
       onPress={onPress}
+      onLongPress={() => showActionHint(accessibilityLabel)}
       hitSlop={6}
       style={({ pressed }) => [
         styles.button,

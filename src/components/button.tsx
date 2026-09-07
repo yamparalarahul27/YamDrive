@@ -1,5 +1,6 @@
 import { Pressable, StyleSheet, type StyleProp, type ViewStyle } from 'react-native';
 
+import { showActionHint } from '@/lib/action-hint';
 import { Icon, type IconName } from '@/components/icon';
 import { ThemedText } from '@/components/themed-text';
 import { MinTouchSize, Radius, Spacing } from '@/constants/theme';
@@ -12,6 +13,7 @@ export type ButtonProps = {
   onPress: () => void;
   variant?: ButtonVariant;
   icon?: IconName;
+  iconOnly?: boolean;
   disabled?: boolean;
   /** Fill the available width. Sheet footers use this. */
   stretch?: boolean;
@@ -23,6 +25,7 @@ export function Button({
   onPress,
   variant = 'primary',
   icon,
+  iconOnly = false,
   disabled = false,
   stretch = false,
   style,
@@ -45,6 +48,8 @@ export function Button({
       accessibilityState={{ disabled }}
       disabled={disabled}
       onPress={onPress}
+      accessibilityHint={iconOnly ? "Hold to show label" : undefined}
+      onLongPress={iconOnly ? () => showActionHint(label) : undefined}
       style={({ pressed }) => [
         styles.button,
         {
@@ -53,12 +58,13 @@ export function Button({
           opacity: disabled ? 0.45 : pressed ? 0.8 : 1,
         },
         stretch && styles.stretch,
+        iconOnly && { width: 52, minHeight: 52, paddingHorizontal: 0 },
         style,
       ]}>
-      {icon ? <Icon name={icon} size={18} color={foreground} /> : null}
-      <ThemedText type="smallBold" style={{ color: foreground }}>
+      {icon ? <Icon name={icon} size={iconOnly ? 24 : 18} color={foreground} /> : null}
+      {!(iconOnly && icon) ? <ThemedText type="smallBold" style={{ color: foreground }}>
         {label}
-      </ThemedText>
+      </ThemedText> : null}
     </Pressable>
   );
 }

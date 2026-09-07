@@ -1,3 +1,6 @@
+import type { RoadRoute } from './route-geometry';
+import type { RidePlan } from './ride-plan';
+
 /** A plain WGS84 point. Structurally compatible with react-native-maps' LatLng. */
 export type Coordinate = {
   latitude: number;
@@ -30,4 +33,6 @@ export type Trip = {
   name: string;
   stops: Stop[];
   updatedAt: number;
+  ridePlan?: RidePlan;
+  roadRoute?: RoadRoute | null;
 };
