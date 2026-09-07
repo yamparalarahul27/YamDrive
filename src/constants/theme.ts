@@ -10,28 +10,34 @@ import { Platform } from 'react-native';
 
 export const Colors = {
   light: {
-    text: '#0B1215',
-    background: '#FFFFFF',
-    backgroundElement: '#F2F4F5',
-    backgroundSelected: '#E2E6E8',
-    textSecondary: '#5A6572',
+    text: '#242523',
+    background: '#F5F5F1',
+    backgroundElement: '#EAEAE5',
+    backgroundSelected: '#DEDFD8',
+    textSecondary: '#636760',
     /** Brand / primary action. */
-    tint: '#0F766E',
-    onTint: '#FFFFFF',
-    border: '#D9DEE2',
+    tint: '#665000',
+    onTint: '#242523',
+    border: '#DCDDD6',
+    primary: '#F4C430', surface: '#FFFFFF', navigation: '#246BAC',
+    rest: '#E3DCEB', fuel: '#F0DFC4', positive: '#367923',
+    departure: '#E8C2A6', onFeature: '#242523',
     danger: '#C22C24',
     /** Dim behind modal sheets. */
     scrim: 'rgba(11, 18, 21, 0.45)',
   },
   dark: {
-    text: '#F2F5F7',
-    background: '#0B1215',
-    backgroundElement: '#181F23',
-    backgroundSelected: '#252E33',
-    textSecondary: '#9BA6B2',
-    tint: '#2DD4BF',
-    onTint: '#04211E',
-    border: '#2A343A',
+    text: '#F5F5F1',
+    background: '#141715',
+    backgroundElement: '#252825',
+    backgroundSelected: '#343833',
+    textSecondary: '#B2B7AD',
+    tint: '#F4C430',
+    onTint: '#242523',
+    border: '#41453E',
+    primary: '#F4C430', surface: '#252825', navigation: '#70B4EF',
+    rest: '#3B3345', fuel: '#443B2A', positive: '#86CD65',
+    departure: '#E8C2A6', onFeature: '#242523',
     danger: '#F87171',
     scrim: 'rgba(0, 0, 0, 0.6)',
   },
@@ -51,7 +57,7 @@ export const Fonts = Platform.select({
     mono: 'ui-monospace',
   },
   default: {
-    sans: 'normal',
+    sans: 'sans-serif',
     serif: 'serif',
     rounded: 'normal',
     mono: 'monospace',
@@ -76,9 +82,9 @@ export const Spacing = {
 
 export const Radius = {
   sm: 8,
-  md: 12,
-  lg: 16,
-  xl: 24,
+  md: 16,
+  lg: 24,
+  xl: 28,
   pill: 999,
 } as const;
 
@@ -87,4 +93,4 @@ export const BottomTabInset = Platform.select({ ios: 50, android: 80 }) ?? 0;
 export const MaxContentWidth = 800;
 
 /** Minimum Android touch target, per Material guidance. */
-export const MinTouchSize = 44;
+export const MinTouchSize = 48;

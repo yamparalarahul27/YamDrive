@@ -97,6 +97,6 @@ export function EndpointPicker({ title, label, initial, onClose, onSelect }: Pro
 const styles = StyleSheet.create({
   top: { position: 'absolute', gap: 6 }, bottom: { position: 'absolute', gap: 4 },
   row: { flexDirection: 'row', alignItems: 'center', gap: 8 },
-  card: { padding: 10, borderRadius: 12, borderWidth: StyleSheet.hairlineWidth, gap: 8 },
+  card: { padding: 16, borderRadius: 16, borderWidth: StyleSheet.hairlineWidth, gap: 8 },
   result: { minHeight: 52, paddingVertical: 10, gap: 4 },
 });

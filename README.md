@@ -1,4 +1,4 @@
-# Pitstop
+# YamDrive
 
 An Android motorcycle trip planner built with React Native, Expo and TypeScript.
 MapLibre displays OpenStreetMap tiles inside the app. Valhalla calculates a road
@@ -7,13 +7,19 @@ billing account are needed for the default personal-use setup.
 
 ## Using it
 
+On **Home**, tap **+** to create a ride in the New ride sheet: choose start and
+destination by search or map pin, enter an estimated distance, and optionally
+name the ride and set its departure time in IST. Tap the current ride row to
+switch between saved rides. Each keeps its own route, stops and checklist.
+Existing single-ride data is preserved during the upgrade.
+
 1. In **Ride Plan**, set your start/destination, estimated average moving speed,
    rest interval, stop duration and optional fuel interval. Defaults describe
    the user's approximate 600 km Guntur–Bangalore ride.
 2. In **Map**, open **Route & stops**, then tap **Build route**. Address lookup uses Android's geocoder
    and needs location permission. The route is calculated for a motorcycle.
-3. The green line follows the roads. A/B are endpoints, R/F markers are planned
-   rest/fuel targets, and S markers are your saved stops. Targets use road
+3. The blue line follows the roads. A/B are endpoints, R/F markers are planned
+   rest targets; fuel targets use labelled pump markers, and saved stops use category markers. Targets use road
    distance and your planning pace, not live traffic or engine temperature.
 4. Tap a target, then **Find stops** and choose **Break** or **Fuel**. Results are mapped places
    within a 5 km straight-line radius, not verified detour distances. Tap + to
@@ -72,7 +78,7 @@ npm run check
 npm run build:apk
 ```
 
-`dist/pitstop-test.apk` includes 32-bit and 64-bit ARM code plus bundled JavaScript,
+`dist/yamdrive-test.apk` includes 32-bit and 64-bit ARM code plus bundled JavaScript,
 so it runs without Metro or the Mac. It uses the generated debug signing identity
 for personal testing. Configure a production signing identity before publication.
 MapLibre requires a custom build and does not run inside Expo Go.
@@ -157,7 +163,7 @@ fallback when farther off route. Route interpolation uses binary search.
 
 `npm run build:apk` enables R8 code and resource shrinking and produces the
 universal ARM APK. `npm run build:apk -- arm32` and `-- arm64` produce separate
-`dist/pitstop-arm32.apk` and `dist/pitstop-arm64.apk` packages. Verify the target
+`dist/yamdrive-arm32.apk` and `dist/yamdrive-arm64.apk` packages. Verify the target
 phone's supported ABIs before choosing one; a 64-bit CPU may run 32-bit Android.
 Minimum Android API remains 24. Realme demo checks do not establish Nokia
 frame rate, memory or battery endurance; test on the target device.

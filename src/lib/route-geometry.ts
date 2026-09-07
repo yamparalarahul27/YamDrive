@@ -1,5 +1,5 @@
 export type Position = [number, number];
-export type RouteStep = { index: number; type: number; instruction: string };
+export type RouteStep = { index: number; type: number; instruction: string; streetNames?: string[] };
 export type RoadRoute = {
   steps?: RouteStep[];
   signature: string;
@@ -82,7 +82,7 @@ export function parseRoadRoute(value: unknown): RoadRoute | null {
       !Array.isArray(r.coordinates) || r.coordinates.length < 2 || r.coordinates.length > 100000 ||
       !r.coordinates.every(p => Array.isArray(p) && p.length === 2 && Number.isFinite(p[0]) && Number.isFinite(p[1]) && Math.abs(p[0]) <= 180 && Math.abs(p[1]) <= 90)) return null;
   const steps = Array.isArray(r.steps) && r.steps.every(s => Number.isInteger(s.index) && s.index >= 0 && s.index < r.coordinates.length &&
-    Number.isInteger(s.type) && typeof s.instruction === 'string' && s.instruction.length <= 600) ? r.steps : undefined;
+    Number.isInteger(s.type) && typeof s.instruction === 'string' && s.instruction.length <= 600 && (s.streetNames === undefined || (Array.isArray(s.streetNames) && s.streetNames.length <= 8 && s.streetNames.every(n => typeof n === 'string' && n.length <= 120)))) ? r.steps : undefined;
   return { ...r, steps };
 }
 export function routeBounds(points: Position[]): [number, number, number, number] {

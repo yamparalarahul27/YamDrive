@@ -1,3 +1,4 @@
+import { useFloatingNavigation } from '@/hooks/use-floating-navigation';
 import { useRouter } from 'expo-router';
 import { parseSpeedRange } from '@/lib/ride-speed';
 import { routeSignature } from '@/lib/route-geometry';
@@ -10,6 +11,7 @@ import { plannedClock } from '@/lib/ride-preparation';
 import { Icon } from '@/components/icon';
 import { IconButton } from '@/components/icon-button';
 import { Sheet } from '@/components/sheet';
+import { Brand } from '@/components/brand';
 import { Button } from '@/components/button';
 import { TextField } from '@/components/text-field';
 import { ThemedText } from '@/components/themed-text';
@@ -26,6 +28,7 @@ export default function PlanScreen() {
 }
 
 function PlanEditor({ initial, save }: { initial: RidePlan; save: (plan: RidePlan) => void }) {
+  const dock = useFloatingNavigation();
   const theme = useTheme();
   const router = useRouter();
   const { trip } = useTrip();
@@ -84,13 +87,14 @@ function PlanEditor({ initial, save }: { initial: RidePlan; save: (plan: RidePla
     };
     setPlan(next); save(next); setEditing(false); setError('');
   };
-  const card = [styles.card, { backgroundColor: theme.backgroundElement, borderColor: theme.border }];
+  const card = [styles.card, { backgroundColor: theme.surface, borderColor: theme.border }];
   return <View style={{ flex: 1, backgroundColor: theme.background }}>
-    <ScrollView contentContainerStyle={[styles.content, { paddingTop: insets.top + Spacing.three,
+    <ScrollView contentContainerStyle={[styles.content, { paddingBottom: dock.clearance + 16, paddingTop: insets.top + Spacing.three,
       paddingLeft: insets.left + Spacing.three, paddingRight: insets.right + Spacing.three }]}>
+      <Brand />
       <View style={styles.row}>
-        <View style={{ flex: 1 }}><ThemedText type="subtitle">Ride plan</ThemedText>
-          <ThemedText type="small" themeColor="textSecondary">Hunter 350 · 2022 · 20,000 km</ThemedText></View>
+        <View style={{ flex: 1, gap: 4 }}><ThemedText type="subtitle">Ride plan</ThemedText>
+          <ThemedText type="caption" themeColor="textSecondary">Hunter 350 · 2022 · 20,000 km</ThemedText></View>
         <IconButton name="tune-variant" accessibilityLabel="Edit ride settings" onPress={() => setEditing(true)} />
       </View>
       <View style={card}>
@@ -98,16 +102,16 @@ function PlanEditor({ initial, save }: { initial: RidePlan; save: (plan: RidePla
         <View style={styles.metrics}>
           {[['Distance', formatDistanceKm(roadRoute?.distanceKm ?? plan.distanceKm)],
             ['Riding', formatDuration(schedule.ridingMinutes)], ['With breaks', formatDuration(schedule.elapsedMinutes)]].map(([label, value]) =>
-            <View key={label} style={styles.metric}><ThemedText type="small" themeColor="textSecondary">{label}</ThemedText>
-              <ThemedText type="smallBold">{value}</ThemedText></View>)}
+            <View key={label} style={styles.metric}><ThemedText type="caption" themeColor="textSecondary">{label}</ThemedText>
+              <ThemedText type="metric">{value.replace(/ h /g, 'h ').replace(/ min/g, 'm')}</ThemedText></View>)}
         </View>
-        <ThemedText type="small" themeColor="textSecondary">Estimated · {roadRoute ? 'road distance' : 'manual distance'} · no live traffic</ThemedText>
+        <ThemedText type="caption" themeColor="textSecondary">Estimated · {roadRoute ? 'road distance' : 'manual distance'} · no live traffic</ThemedText>
       </View>
-      <View style={card}>
-        <View style={styles.row}><Icon name="coffee-outline" color={theme.tint} /><ThemedText type="small">{plan.breakMinutes} min rest every {plan.breakEveryMinutes} min</ThemedText></View>
-        <View style={styles.row}><Icon name="gas-station" color={theme.tint} /><ThemedText type="small">{plan.fuelEveryKm === null ? 'Fuel interval not set' : `Refuel every ${plan.fuelEveryKm} km`}</ThemedText></View>
+      <View style={{ gap: 8 }}>
+        <View style={[styles.feature, { backgroundColor: theme.rest }]}><Icon name="coffee-outline" color={theme.tint} /><ThemedText type="small" style={{ flex: 1 }}>{plan.breakMinutes} min rest every {plan.breakEveryMinutes} min</ThemedText></View>
+        <View style={[styles.feature, { backgroundColor: theme.fuel }]}><Icon name="gas-station" color={theme.tint} /><ThemedText type="small" style={{ flex: 1 }}>{plan.fuelEveryKm === null ? 'Fuel interval not set' : `Refuel every ${plan.fuelEveryKm} km`}</ThemedText></View>
       </View>
-      <Button label="View map" icon="map-outline" onPress={() => router.navigate('/')} />
+      <Button label="View map" icon="map-outline" onPress={() => router.navigate('/map')} />
       <RidePreparation plan={plan} elapsedMinutes={schedule.elapsedMinutes} onChange={next => { setPlan(next); save(next); }} />
       <View style={card}>
         <Pressable accessibilityRole="button" accessibilityState={{ expanded: scheduleOpen }} style={styles.disclosure} onPress={() => setScheduleOpen(!scheduleOpen)}>
@@ -115,7 +119,7 @@ function PlanEditor({ initial, save }: { initial: RidePlan; save: (plan: RidePla
           <Icon name={scheduleOpen ? 'chevron-up' : 'chevron-down'} color={theme.textSecondary} />
         </Pressable>
         {scheduleOpen ? <View style={{ gap: 8 }}>
-          {plan.departureTime ? <ThemedText type="small" themeColor="textSecondary">Estimated times · IST · includes breaks</ThemedText> : null}
+          {plan.departureTime ? <ThemedText type="caption" themeColor="textSecondary">Estimated times · IST · includes breaks</ThemedText> : null}
           {schedule.stops.length === 0 ? <ThemedText type="small" themeColor="textSecondary">No breaks planned before arrival.</ThemedText> : null}
           {schedule.stops.map((stop, index) => <View key={stop.km} style={[styles.scheduleRow, { borderColor: theme.border }]}>
             <Icon name={stop.fuel ? 'gas-station' : 'coffee-outline'} color={theme.tint} />
@@ -166,12 +170,13 @@ function PlanEditor({ initial, save }: { initial: RidePlan; save: (plan: RidePla
   </View>;
 }
 const styles = StyleSheet.create({
-  content: { paddingHorizontal: Spacing.three, paddingBottom: Spacing.five, gap: 12 },
+  content: { paddingHorizontal: Spacing.three, paddingBottom: Spacing.five, gap: 16 },
   card: { padding: Spacing.three, borderRadius: Radius.lg, borderWidth: StyleSheet.hairlineWidth, gap: 12 },
   endpoint: { flexDirection: 'row', alignItems: 'center', gap: 12, padding: 14, borderRadius: Radius.md, minHeight: 64 },
   row: { flexDirection: 'row', alignItems: 'center', gap: 12 },
-  metrics: { flexDirection: 'row', flexWrap: 'wrap', gap: 16 },
-  metric: { flexGrow: 1, gap: 4 },
+  feature: { flexDirection: 'row', alignItems: 'center', gap: 12, padding: 16, borderRadius: 16 },
+  metrics: { flexDirection: 'row', flexWrap: 'wrap', gap: 12 },
+  metric: { flex: 1, minWidth: 80, gap: 6 },
   disclosure: { minHeight: 44, flexDirection: 'row', alignItems: 'center', justifyContent: 'space-between', gap: 12 },
   scheduleRow: { flexDirection: 'row', alignItems: 'center', gap: 12, paddingVertical: 10, borderBottomWidth: StyleSheet.hairlineWidth },
 });

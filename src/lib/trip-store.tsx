@@ -7,11 +7,13 @@ import {
   useMemo,
   useReducer,
   useRef,
+  useState,
   type ReactNode,
 } from 'react';
 
 import { parseRidePlan, type RidePlan } from '@/lib/ride-plan';
-import { loadTrip, saveTrip } from '@/lib/storage';
+import { loadRideLibrary, saveRideLibrary } from '@/lib/storage';
+import { upsertRide, switchRide, type RideLibrary } from '@/lib/ride-library';
 import type { Stop, StopCategory, Trip } from '@/lib/types';
 
 /** Good enough for local ids; no uuid dependency for something never synced. */
@@ -33,7 +35,10 @@ export type NewStop = {
 };
 
 type Action =
-  | { type: 'hydrate'; trip: Trip | null }
+  | { type: 'hydrate'; library: RideLibrary | null }
+  | { type: 'createRide'; trip: Trip }
+  | { type: 'switchRide'; id: string }
+  | { type: 'deleteRide'; id: string }
   | { type: 'addStop'; stop: NewStop }
   | { type: 'updateStop'; id: string; changes: Partial<Omit<Stop, 'id' | 'createdAt'>> }
   | { type: 'removeStop'; id: string }
@@ -44,6 +49,7 @@ type Action =
   | { type: 'setRoadRoute'; route: RoadRoute };
 
 type State = {
+  trips: Trip[];
   trip: Trip;
   /** False until AsyncStorage has been read, so we never persist over saved data. */
   hydrated: boolean;
@@ -68,7 +74,13 @@ function reducer(state: State, action: Action): State {
 
   switch (action.type) {
     case 'hydrate':
-      return { trip: action.trip ?? state.trip, hydrated: true };
+      return { trip: action.library?.trips.find(t => t.id === action.library?.activeId) ?? state.trip, trips: action.library?.trips ?? [state.trip], hydrated: true };
+    case 'deleteRide':
+      return action.id === state.trip.id ? state : { ...state, trips: state.trips.filter(t => t.id !== action.id) };
+    case 'createRide':
+      return { ...state, trips: upsertRide(upsertRide(state.trips, state.trip), action.trip), trip: action.trip };
+    case 'switchRide':
+      return { ...state, ...switchRide(state.trip, state.trips, action.id) };
 
     case 'addStop': {
       const stop: Stop = { ...action.stop, id: createId(), createdAt: Date.now() };
@@ -111,6 +123,11 @@ function reducer(state: State, action: Action): State {
 
 type TripContextValue = {
   trip: Trip;
+  trips: Trip[];
+  storageError: string;
+  createRide: (name: string, plan: RidePlan) => void;
+  selectRide: (id: string) => void;
+  deleteRide: (id: string) => void;
   hydrated: boolean;
   addStop: (stop: NewStop) => void;
   updateStop: (id: string, changes: Partial<Omit<Stop, 'id' | 'createdAt'>>) => void;
@@ -125,50 +142,61 @@ type TripContextValue = {
 const TripContext = createContext<TripContextValue | null>(null);
 
 export function TripProvider({ children }: { children: ReactNode }) {
-  const [state, dispatch] = useReducer(reducer, undefined, () => ({
+  const [state, rawDispatch] = useReducer((state: State, action: Action & { scope?: string }) => action.scope && action.scope !== state.trip.id ? state : reducer(state, action), undefined, () => ({
+    trips: [],
     trip: emptyTrip(),
     hydrated: false,
   }));
 
+  const [storageError, setStorageError] = useState('');
+  // Scope delayed map/search results to the ride that initiated them.
+  const dispatch = useCallback((action: Action) => rawDispatch({ ...action, scope: state.trip.id }), [state.trip.id]);
   // Read the saved trip once on mount.
   useEffect(() => {
     let cancelled = false;
-    loadTrip().then((trip) => {
-      if (!cancelled) dispatch({ type: 'hydrate', trip });
-    });
+    loadRideLibrary().then((library) => {
+      if (!cancelled) rawDispatch({ type: 'hydrate', library });
+    }).catch(() => { if (!cancelled) setStorageError('Could not load saved rides. Restart the app to retry. Your saved data has not been replaced.'); });
     return () => {
       cancelled = true;
     };
   }, []);
 
   // Persist after every change, but never before hydration has landed.
-  const lastSaved = useRef<Trip | null>(null);
+  const lastSaved = useRef<State | null>(null);
   useEffect(() => {
     if (!state.hydrated) return;
-    if (lastSaved.current === state.trip) return;
-    lastSaved.current = state.trip;
-    void saveTrip(state.trip);
-  }, [state.hydrated, state.trip]);
+    if (lastSaved.current === state) return;
+    lastSaved.current = state;
+    void saveRideLibrary({ activeId: state.trip.id, trips: upsertRide(state.trips, state.trip) }).catch(() => setStorageError('Changes could not be saved. Keep the app open and try another change after freeing storage.'));
+  }, [state]);
 
-  const addStop = useCallback((stop: NewStop) => dispatch({ type: 'addStop', stop }), []);
+  const addStop = useCallback((stop: NewStop) => dispatch({ type: 'addStop', stop }), [dispatch]);
   const updateStop = useCallback(
     (id: string, changes: Partial<Omit<Stop, 'id' | 'createdAt'>>) =>
       dispatch({ type: 'updateStop', id, changes }),
-    [],
+    [dispatch],
   );
-  const removeStop = useCallback((id: string) => dispatch({ type: 'removeStop', id }), []);
+  const removeStop = useCallback((id: string) => dispatch({ type: 'removeStop', id }), [dispatch]);
   const moveStop = useCallback(
     (id: string, offset: number) => dispatch({ type: 'moveStop', id, offset }),
-    [],
+    [dispatch],
   );
-  const renameTrip = useCallback((name: string) => dispatch({ type: 'renameTrip', name }), []);
-  const setRoadRoute = useCallback((route: RoadRoute) => dispatch({ type: 'setRoadRoute', route }), []);
-  const setRidePlan = useCallback((plan: RidePlan) => dispatch({ type: 'setRidePlan', plan }), []);
-  const clearStops = useCallback(() => dispatch({ type: 'clearStops' }), []);
+  const renameTrip = useCallback((name: string) => dispatch({ type: 'renameTrip', name }), [dispatch]);
+  const setRoadRoute = useCallback((route: RoadRoute) => dispatch({ type: 'setRoadRoute', route }), [dispatch]);
+  const setRidePlan = useCallback((plan: RidePlan) => dispatch({ type: 'setRidePlan', plan }), [dispatch]);
+  const clearStops = useCallback(() => dispatch({ type: 'clearStops' }), [dispatch]);
 
+  const createRide = useCallback((name: string, plan: RidePlan) => {
+    if (!state.hydrated) return;
+    dispatch({ type: 'createRide', trip: { id: createId(), name: name.trim(), stops: [], ridePlan: { ...parseRidePlan(plan), preRideChecks: [] }, updatedAt: Date.now() } });
+  }, [dispatch, state.hydrated]);
+  const deleteRide = useCallback((id: string) => { if (state.hydrated) dispatch({ type: 'deleteRide', id }); }, [dispatch, state.hydrated]);
+  const selectRide = useCallback((id: string) => { if (state.hydrated) dispatch({ type: 'switchRide', id }); }, [dispatch, state.hydrated]);
   const value = useMemo<TripContextValue>(
     () => ({
       trip: state.trip,
+      trips: upsertRide(state.trips, state.trip), storageError, createRide, selectRide, deleteRide,
       hydrated: state.hydrated,
       addStop,
       updateStop,
@@ -179,7 +207,7 @@ export function TripProvider({ children }: { children: ReactNode }) {
       setRidePlan,
       setRoadRoute,
     }),
-    [state.trip, state.hydrated, addStop, updateStop, removeStop, moveStop, renameTrip, clearStops, setRidePlan, setRoadRoute],
+    [state.trip, state.trips, state.hydrated, storageError, createRide, selectRide, deleteRide, addStop, updateStop, removeStop, moveStop, renameTrip, clearStops, setRidePlan, setRoadRoute],
   );
 
   return <TripContext.Provider value={value}>{children}</TripContext.Provider>;

@@ -62,7 +62,7 @@ const styles = StyleSheet.create({
   elevated: {
     elevation: 4,
     shadowColor: '#000',
-    shadowOpacity: 0.2,
+    shadowOpacity: 0.10,
     shadowRadius: 4,
     shadowOffset: { width: 0, height: 2 },
   },

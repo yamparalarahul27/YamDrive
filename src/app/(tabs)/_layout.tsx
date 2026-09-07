@@ -1,3 +1,4 @@
+import { useFloatingNavigation } from '@/hooks/use-floating-navigation';
 import { Tabs } from 'expo-router';
 
 import { Icon } from '@/components/icon';
@@ -6,22 +7,23 @@ import { showActionHint } from '@/lib/action-hint';
 
 export default function TabsLayout() {
   const theme = useTheme();
+  const dock = useFloatingNavigation();
 
   return (
     <Tabs
-      screenListeners={({ route }) => ({ tabLongPress: () => showActionHint(route.name === 'index' ? 'Map' : route.name === 'plan' ? 'Ride Plan' : 'Trip') })}
+      screenListeners={({ route }) => ({ tabLongPress: () => showActionHint(route.name === 'index' ? 'Home' : route.name === 'map' ? 'Map' : route.name === 'plan' ? 'Ride Plan' : 'Trip') })}
       screenOptions={{
         headerShown: false,
         tabBarShowLabel: false,
-        tabBarActiveTintColor: theme.tint,
-        tabBarInactiveTintColor: theme.textSecondary,
-        tabBarStyle: {
-          backgroundColor: theme.background,
-          borderTopColor: theme.border,
-        },
+        tabBarIconStyle: { flex: 1 },
+        tabBarActiveTintColor: '#F4C430',
+        tabBarInactiveTintColor: '#D3D5D1',
+        tabBarHideOnKeyboard: true,
+        tabBarStyle: dock.style,
       }}>
+      <Tabs.Screen name="index" options={{ title: 'Home', tabBarIcon: ({ color, size }) => <Icon name="home" color={typeof color === 'string' ? color : theme.text} size={size} /> }} />
       <Tabs.Screen
-        name="index"
+        name="map"
         options={{
           title: 'Map',
           tabBarIcon: ({ color, size }) => <Icon name="map-outline" color={typeof color === 'string' ? color : theme.text} size={size} />,

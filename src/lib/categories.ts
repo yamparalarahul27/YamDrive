@@ -64,6 +64,4 @@ export function categoryMeta(category: StopCategory): CategoryMeta {
   return CATEGORIES[category] ?? CATEGORIES.other;
 }
 
-export function isStopCategory(value: unknown): value is StopCategory {
-  return typeof value === 'string' && value in CATEGORIES;
-}
+export { isStopCategory } from './types.ts';

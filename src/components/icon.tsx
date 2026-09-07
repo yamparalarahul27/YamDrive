@@ -1,3 +1,5 @@
+import { InfoIcon } from 'phosphor-react-native/src/icons/Info';
+import { HouseIcon } from 'phosphor-react-native/src/icons/House';
 import { ClockIcon } from 'phosphor-react-native/src/icons/Clock';
 import { ListChecksIcon } from 'phosphor-react-native/src/icons/ListChecks';
 import { CheckSquareIcon } from 'phosphor-react-native/src/icons/CheckSquare';
@@ -21,6 +23,7 @@ import { CaretDownIcon } from 'phosphor-react-native/src/icons/CaretDown';
 import { CaretUpIcon } from 'phosphor-react-native/src/icons/CaretUp';
 import { CheckIcon } from 'phosphor-react-native/src/icons/Check';
 import { CoffeeIcon } from 'phosphor-react-native/src/icons/Coffee';
+import { CornersInIcon } from 'phosphor-react-native/src/icons/CornersIn';
 import { CornersOutIcon } from 'phosphor-react-native/src/icons/CornersOut';
 import { CrosshairIcon } from 'phosphor-react-native/src/icons/Crosshair';
 import { ForkKnifeIcon } from 'phosphor-react-native/src/icons/ForkKnife';
@@ -42,6 +45,8 @@ import { XIcon } from 'phosphor-react-native/src/icons/X';
 
 // Import only the Phosphor icons used by the app.
 const icons = {
+  'information-outline': InfoIcon,
+  home: HouseIcon,
   clock: ClockIcon, checklist: ListChecksIcon, 'check-square': CheckSquareIcon, square: SquareIcon,
   'turn-left': ArrowBendUpLeftIcon,
   'turn-right': ArrowBendUpRightIcon,
@@ -59,6 +64,7 @@ const icons = {
   'chevron-down': CaretDownIcon,
   'crosshairs-gps': CrosshairIcon,
   'fit-to-screen-outline': CornersOutIcon,
+  'collapse-view': CornersInIcon,
   'arrow-expand': ArrowsOutIcon,
   'arrow-collapse': ArrowsInIcon,
   'tune-variant': SlidersHorizontalIcon,

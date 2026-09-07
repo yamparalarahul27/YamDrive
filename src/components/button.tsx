@@ -34,7 +34,7 @@ export function Button({
 
   const background =
     variant === 'primary'
-      ? theme.tint
+      ? theme.primary
       : variant === 'danger'
         ? 'transparent'
         : theme.backgroundElement;
@@ -77,6 +77,7 @@ const styles = StyleSheet.create({
     justifyContent: 'center',
     gap: Spacing.two,
     paddingHorizontal: Spacing.three,
+    paddingVertical: 12,
     borderRadius: Radius.md,
     borderWidth: StyleSheet.hairlineWidth,
   },

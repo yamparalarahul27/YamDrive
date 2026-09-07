@@ -7,9 +7,9 @@ if [[ -d /opt/homebrew/opt/openjdk@17/libexec/openjdk.jdk/Contents/Home ]]; then
 fi
 export ANDROID_HOME="${ANDROID_HOME:-/opt/homebrew/share/android-commandlinetools}"
 case "${1:-universal}" in
-  universal) apk_architectures=armeabi-v7a,arm64-v8a; apk_name=pitstop-test ;;
-  arm32) apk_architectures=armeabi-v7a; apk_name=pitstop-arm32 ;;
-  arm64) apk_architectures=arm64-v8a; apk_name=pitstop-arm64 ;;
+  universal) apk_architectures=armeabi-v7a,arm64-v8a; apk_name=yamdrive-test ;;
+  arm32) apk_architectures=armeabi-v7a; apk_name=yamdrive-arm32 ;;
+  arm64) apk_architectures=arm64-v8a; apk_name=yamdrive-arm64 ;;
   *) printf 'Usage: %s [universal|arm32|arm64]\n' "$0" >&2; exit 1 ;;
 esac
 npx expo prebuild --platform android --no-install

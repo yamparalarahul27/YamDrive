@@ -1,5 +1,5 @@
 {
-  "name": "pitstop",
+  "name": "yamdrive",
   "main": "expo-router/entry",
   "version": "1.0.0",
   "dependencies": {
@@ -46,5 +46,5 @@
     "build:apk": "bash scripts/build-apk.sh"
   },
   "private": true,
-  "description": "Android road-trip itinerary planner: drop stops on Google Maps, find fuel along the way, hand the route to Google Maps."
+  "description": "Motorcycle trip planning and in-app navigation with fuel stops, rest breaks and ride preparation."
 }

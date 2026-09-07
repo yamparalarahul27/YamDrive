@@ -154,7 +154,7 @@ const styles = StyleSheet.create({
     flexDirection: 'row',
     alignItems: 'center',
     gap: Spacing.two,
-    padding: Spacing.two,
+    padding: 12,
     borderRadius: Radius.md,
     borderWidth: StyleSheet.hairlineWidth,
   },
@@ -167,6 +167,6 @@ const styles = StyleSheet.create({
   },
   rowText: {
     flex: 1,
-    gap: 1,
+    gap: 4,
   },
 });
