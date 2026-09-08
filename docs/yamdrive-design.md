@@ -48,3 +48,17 @@ The floating tab dock uses centred icons. In ride view, Re-centre sits left of t
 The compass is a fixed north-up reference: yellow stays at the top, green rotates with travel heading independently of map rotation, and the centre label shows the heading with a smaller letter for the weaker diagonal axis. Both pointers are inset three physical pixels from their original position. Heading changes crossfade with blur on supported Android versions and fade on older versions, respecting reduced motion. Tap resets the map north-up.
 
 Map attribution appears for five seconds, then remains available through Route & stops → Map credits. The lower controls translate smoothly as the visible attribution collapses; reduced motion disables the transition.
+
+### Vehicle info
+
+Home uses the supplied three-quarter Hunter 350 PNG; tapping the image opens `/vehicle`, which uses the side-view PNG. The Home header combines ride selection, new ride and settings. Vehicle details are editable and shared across rides under `yamdrive.vehicle.v1`, outside the keyed ride stack. Initial year and mileage retain the existing 2022 / 20,000 km values. Pressure readings, service records and maintenance notes start empty. Saves are confirmed by storage before updating the UI, and unreadable data is not overwritten. Pressure values are manual entries in psi; service dates and recorded mileage are validated. The screen stacks in portrait and uses two columns in landscape.
+
+### Fuel tracking and simplified headers
+
+Vehicle info uses icon-only back/edit actions. Fuel & mileage replaces the pressure UI; legacy pressure records remain stored for compatibility. Fuel fills record date, odometer, litres, total rupees and full/partial status. Saving a new fill updates the vehicle odometer and requires progression beyond the previous fill. The latest completed full-to-full interval determines km/L and fuel cost/km, excluding the starting fill and including intervening partial fills. Total spend includes all entries. Values remain unavailable before a completed interval; there is no live fuel-level estimate or automatic GPS odometer. Ride Plan and Trip retain titles/actions without the YamDrive wordmark.
+
+### Home range and four-card dashboard
+
+Home shows estimated range instead of bike identity, a larger bike image, and a two-by-two Energy / Departure / Ride checks / Vehicle health grid. Identity stays in Vehicle info. Energy requires user-entered tank capacity, a full-fill baseline and measured full-to-full mileage; it subtracts odometer distance and adds subsequent partial fills, clamping fuel to capacity and zero. Odometer updates remain manual or fuel-entry driven, not automatic GPS accumulation. Unknown estimates stay unavailable.
+
+Service setup accepts purchase date and the last confirmed scheduled milestone for the 2022 Hunter 350, with independently optional workshop date/km overrides. Calendar milestones are from purchase, with end-of-month clamping. Either elapsed date or reached mileage marks a reminder due. Ordinary service notes do not reset the schedule; other models require workshop values. The setup links to Royal Enfield's 2022 dual-channel owner manual, periodic maintenance pages 83–88. This is a maintenance reminder, not a mechanical-health diagnosis.

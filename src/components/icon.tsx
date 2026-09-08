@@ -1,3 +1,4 @@
+import { ArrowLeftIcon } from 'phosphor-react-native/src/icons/ArrowLeft';
 import { InfoIcon } from 'phosphor-react-native/src/icons/Info';
 import { HouseIcon } from 'phosphor-react-native/src/icons/House';
 import { ClockIcon } from 'phosphor-react-native/src/icons/Clock';
@@ -71,6 +72,7 @@ const icons = {
   'close': XIcon,
   'pencil-outline': PencilSimpleIcon,
   'magnify': MagnifyingGlassIcon,
+  'arrow-left': ArrowLeftIcon,
   'arrow-up': ArrowUpIcon,
   'arrow-down': ArrowDownIcon,
   'navigation-variant': NavigationArrowIcon,

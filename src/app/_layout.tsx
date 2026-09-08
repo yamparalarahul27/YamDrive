@@ -4,6 +4,7 @@ import * as SplashScreen from 'expo-splash-screen';
 import { useEffect } from 'react';
 import { useColorScheme } from 'react-native';
 
+import { VehicleProvider } from '@/lib/vehicle-store';
 import { TripProvider, useTrip } from '@/lib/trip-store';
 
 SplashScreen.preventAutoHideAsync();
@@ -36,11 +37,11 @@ export default function RootLayout() {
 
   return (
     <ThemeProvider value={dark ? DarkTheme : DefaultTheme}>
-      <TripProvider>
+      <VehicleProvider><TripProvider>
         <SplashGate />
         <StatusBar style={dark ? 'light' : 'dark'} />
         <RideStack />
-      </TripProvider>
+      </TripProvider></VehicleProvider>
     </ThemeProvider>
   );
 }

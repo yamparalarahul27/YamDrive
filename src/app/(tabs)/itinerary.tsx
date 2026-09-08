@@ -6,7 +6,6 @@ import { useCallback, useMemo, useState } from 'react';
 import { Alert, Linking, Pressable, ScrollView, StyleSheet, View } from 'react-native';
 import { useSafeAreaInsets } from 'react-native-safe-area-context';
 
-import { Brand } from '@/components/brand';
 import { Button } from '@/components/button';
 import { Icon } from '@/components/icon';
 import { IconButton } from '@/components/icon-button';
@@ -82,7 +81,6 @@ export default function ItineraryScreen() {
   return <View style={{ flex: 1, backgroundColor: theme.background }}>
     <ScrollView contentContainerStyle={[styles.content, { paddingBottom: dock.clearance + 16, paddingTop: insets.top + Spacing.three,
       paddingLeft: insets.left + Spacing.three, paddingRight: insets.right + Spacing.three }]}>
-      <Brand />
       <View style={styles.row}>
         <View style={{ flex: 1, gap: 4 }}><ThemedText type="subtitle">Trip</ThemedText>
           <ThemedText type="small" themeColor="textSecondary" numberOfLines={1}>{trip.name}</ThemedText></View>
