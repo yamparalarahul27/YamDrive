@@ -11,7 +11,6 @@ import { plannedClock } from '@/lib/ride-preparation';
 import { Icon } from '@/components/icon';
 import { IconButton } from '@/components/icon-button';
 import { Sheet } from '@/components/sheet';
-import { Brand } from '@/components/brand';
 import { Button } from '@/components/button';
 import { TextField } from '@/components/text-field';
 import { ThemedText } from '@/components/themed-text';
@@ -91,7 +90,6 @@ function PlanEditor({ initial, save }: { initial: RidePlan; save: (plan: RidePla
   return <View style={{ flex: 1, backgroundColor: theme.background }}>
     <ScrollView contentContainerStyle={[styles.content, { paddingBottom: dock.clearance + 16, paddingTop: insets.top + Spacing.three,
       paddingLeft: insets.left + Spacing.three, paddingRight: insets.right + Spacing.three }]}>
-      <Brand />
       <View style={styles.row}>
         <View style={{ flex: 1, gap: 4 }}><ThemedText type="subtitle">Ride plan</ThemedText>
           <ThemedText type="caption" themeColor="textSecondary">Hunter 350 · 2022 · 20,000 km</ThemedText></View>
